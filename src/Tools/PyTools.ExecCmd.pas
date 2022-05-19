@@ -77,7 +77,7 @@ uses
 
 class function TExecCmdService.Cmd(const ACmd: string; const AArg, AEnv: TArray<string>): IExecCmd;
 begin
-  TExecCmd.Create(ACmd, AArg, AEnv);
+  Result := TExecCmd.Create(ACmd, AArg, AEnv);
 end;
 
 class function TExecCmdService.Cmd(const ACmd: string;
