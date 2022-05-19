@@ -1,0 +1,60 @@
+﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <ProjectGuid>{8B08FCE5-F030-4FEA-B40D-5849BF8F2B06}</ProjectGuid>
+    </PropertyGroup>
+    <ItemGroup>
+        <Projects Include="P4DTools.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="P4DEnvironment.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="dclP4DEnvironment.dproj">
+            <Dependencies/>
+        </Projects>
+    </ItemGroup>
+    <ProjectExtensions>
+        <Borland.Personality>Default.Personality.12</Borland.Personality>
+        <Borland.ProjectType/>
+        <BorlandProject>
+            <Default.Personality/>
+        </BorlandProject>
+    </ProjectExtensions>
+    <Target Name="P4DTools">
+        <MSBuild Projects="P4DTools.dproj"/>
+    </Target>
+    <Target Name="P4DTools:Clean">
+        <MSBuild Projects="P4DTools.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="P4DTools:Make">
+        <MSBuild Projects="P4DTools.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="P4DEnvironment">
+        <MSBuild Projects="P4DEnvironment.dproj"/>
+    </Target>
+    <Target Name="P4DEnvironment:Clean">
+        <MSBuild Projects="P4DEnvironment.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="P4DEnvironment:Make">
+        <MSBuild Projects="P4DEnvironment.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="dclP4DEnvironment">
+        <MSBuild Projects="dclP4DEnvironment.dproj"/>
+    </Target>
+    <Target Name="dclP4DEnvironment:Clean">
+        <MSBuild Projects="dclP4DEnvironment.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="dclP4DEnvironment:Make">
+        <MSBuild Projects="dclP4DEnvironment.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="Build">
+        <CallTarget Targets="P4DTools;P4DEnvironment;dclP4DEnvironment"/>
+    </Target>
+    <Target Name="Clean">
+        <CallTarget Targets="P4DTools:Clean;P4DEnvironment:Clean;dclP4DEnvironment:Clean"/>
+    </Target>
+    <Target Name="Make">
+        <CallTarget Targets="P4DTools:Make;P4DEnvironment:Make;dclP4DEnvironment:Make"/>
+    </Target>
+    <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
+</Project>

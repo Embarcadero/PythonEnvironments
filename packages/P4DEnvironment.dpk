@@ -1,0 +1,53 @@
+package P4DEnvironment;
+
+{$R *.res}
+{$IFDEF IMPLICITBUILDING This IFDEF should not be used by users}
+{$ALIGN 8}
+{$ASSERTIONS ON}
+{$BOOLEVAL OFF}
+{$DEBUGINFO OFF}
+{$EXTENDEDSYNTAX ON}
+{$IMPORTEDDATA ON}
+{$IOCHECKS ON}
+{$LOCALSYMBOLS ON}
+{$LONGSTRINGS ON}
+{$OPENSTRINGS ON}
+{$OPTIMIZATION OFF}
+{$OVERFLOWCHECKS ON}
+{$RANGECHECKS ON}
+{$REFERENCEINFO ON}
+{$SAFEDIVIDE OFF}
+{$STACKFRAMES ON}
+{$TYPEDADDRESS OFF}
+{$VARSTRINGCHECKS ON}
+{$WRITEABLECONST OFF}
+{$MINENUMSIZE 1}
+{$IMAGEBASE $400000}
+{$DEFINE DEBUG}
+{$ENDIF IMPLICITBUILDING}
+{$LIBSUFFIX AUTO}
+{$RUNONLY}
+{$IMPLICITBUILD ON}
+
+requires
+  rtl,
+  python,
+  p4dtools;
+
+contains
+  PyEnvironment in '..\src\PyEnvironment.pas',
+  PyEnvironment.Notification in '..\src\PyEnvironment.Notification.pas',
+  PyEnvironment.Distribution in '..\src\PyEnvironment.Distribution.pas',
+  PyEnvironment.Local in '..\src\PyEnvironment.Local.pas',
+  PyEnvironment.Path in '..\src\PyEnvironment.Path.pas',
+  PyEnvironment.Embeddable in '..\src\Embeddable\PyEnvironment.Embeddable.pas',
+  PyEnvironment.Embeddable.Res in '..\src\Embeddable\Res\PyEnvironment.Embeddable.Res.pas',
+  PyEnvironment.Embeddable.Res.Python37 in '..\src\Embeddable\Res\PyEnvironment.Embeddable.Res.Python37.pas',
+  PyEnvironment.Embeddable.Res.Python38 in '..\src\Embeddable\Res\PyEnvironment.Embeddable.Res.Python38.pas',
+  PyEnvironment.Embeddable.Res.Python39 in '..\src\Embeddable\Res\PyEnvironment.Embeddable.Res.Python39.pas',
+  PyEnvironment.Embeddable.Res.Python310 in '..\src\Embeddable\Res\PyEnvironment.Embeddable.Res.Python310.pas',
+  PyEnvironment.AddOn.EnsurePip in '..\src\AddOn\PyEnvironment.AddOn.EnsurePip.pas',
+  PyEnvironment.AddOn.GetPip in '..\src\AddOn\PyEnvironment.AddOn.GetPip.pas',
+  PyEnvironment.AddOn in '..\src\AddOn\PyEnvironment.AddOn.pas';
+
+end.
