@@ -36,6 +36,6 @@ requires
   p4denvironment;
 
 contains
-  PyEnvReg in '..\src\PyEnvReg.pas';
+  PyEnvironment.Registration in '..\src\PyEnvironment.Registration.pas';
 
 end.
