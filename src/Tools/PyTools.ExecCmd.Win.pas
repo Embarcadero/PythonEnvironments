@@ -181,6 +181,7 @@ begin
 
     while GetIsAlive() and Result.IsEmpty() do begin
       Result := Result + PeekMessage();
+      Sleep(100);
     end;
 
     if not Result.IsEmpty() then
@@ -290,15 +291,15 @@ var
 begin
   Result := String.Empty;
 
-  if ACheckPipe and not PeekNamedPipe(FStdOutPipeRead, nil, 0, nil, @LBytesRead, nil) then
-    Exit;
+  if ACheckPipe then
+    if not PeekNamedPipe(FStdOutPipeRead, nil, 0, nil, @LBytesRead, nil)
+      or (LBytesRead = 0) then
+        Exit;
 
-  if (LBytesRead > 0) then
-    if ReadFile(FStdOutPipeRead, LBuffer, BUFFSIZE, LBytesRead, nil) then
-      if (LBytesRead > 0) then begin
-        LBuffer[LBytesRead] := #0;
-        Result := Result + String(LBuffer);
-      end;
+  if ReadFile(FStdOutPipeRead, LBuffer, BUFFSIZE, LBytesRead, nil) then
+    if (LBytesRead > 0) then begin
+      SetString(Result, LBuffer, LBytesRead);
+    end;
 end;
 
 end.
