@@ -1,0 +1,11 @@
+{
+	"name": "PythonEnviroments",
+	"description": "Components to simplify the deployment for Python environments for Delphi applications using Python4Delphi.",
+	"version": "1.0.0",
+	"homepage": "https://github.com/Embarcadero/PythonEnviroments",
+	"mainsrc": "./src",
+	"projects": [],
+	"dependencies": {
+		"https://github.com/embarcadero/python4delphi": "^1.1"
+	}
+}
