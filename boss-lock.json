@@ -1,0 +1,14 @@
+{
+	"hash": "d41d8cd98f00b204e9800998ecf8427e",
+	"updated": "2022-06-08T16:29:50.4218028-07:00",
+	"installedModules": {
+		"https://github.com/embarcadero/python4delphi": {
+			"name": "python4delphi",
+			"version": "1.1",
+			"hash": "e3651527eab7f1eac8adac7917c6f5e1",
+			"artifacts": {},
+			"failed": false,
+			"changed": false
+		}
+	}
+}
