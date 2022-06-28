@@ -12,6 +12,9 @@
         <Projects Include="dclP4DEnvironment.dproj">
             <Dependencies/>
         </Projects>
+        <Projects Include="dclP4DEnvironmentProject.dproj">
+            <Dependencies/>
+        </Projects>
     </ItemGroup>
     <ProjectExtensions>
         <Borland.Personality>Default.Personality.12</Borland.Personality>
@@ -47,14 +50,23 @@
     <Target Name="dclP4DEnvironment:Make">
         <MSBuild Projects="dclP4DEnvironment.dproj" Targets="Make"/>
     </Target>
+    <Target Name="dclP4DEnvironmentProject">
+        <MSBuild Projects="dclP4DEnvironmentProject.dproj"/>
+    </Target>
+    <Target Name="dclP4DEnvironmentProject:Clean">
+        <MSBuild Projects="dclP4DEnvironmentProject.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="dclP4DEnvironmentProject:Make">
+        <MSBuild Projects="dclP4DEnvironmentProject.dproj" Targets="Make"/>
+    </Target>
     <Target Name="Build">
-        <CallTarget Targets="P4DTools;P4DEnvironment;dclP4DEnvironment"/>
+        <CallTarget Targets="P4DTools;P4DEnvironment;dclP4DEnvironment;dclP4DEnvironmentProject"/>
     </Target>
     <Target Name="Clean">
-        <CallTarget Targets="P4DTools:Clean;P4DEnvironment:Clean;dclP4DEnvironment:Clean"/>
+        <CallTarget Targets="P4DTools:Clean;P4DEnvironment:Clean;dclP4DEnvironment:Clean;dclP4DEnvironmentProject:Clean"/>
     </Target>
     <Target Name="Make">
-        <CallTarget Targets="P4DTools:Make;P4DEnvironment:Make;dclP4DEnvironment:Make"/>
+        <CallTarget Targets="P4DTools:Make;P4DEnvironment:Make;dclP4DEnvironment:Make;dclP4DEnvironmentProject:Make"/>
     </Target>
     <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
 </Project>
