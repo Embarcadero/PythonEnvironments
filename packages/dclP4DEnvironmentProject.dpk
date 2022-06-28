@@ -1,0 +1,46 @@
+package dclP4DEnvironmentProject;
+
+{$R *.res}
+{$IFDEF IMPLICITBUILDING This IFDEF should not be used by users}
+{$ALIGN 8}
+{$ASSERTIONS ON}
+{$BOOLEVAL OFF}
+{$DEBUGINFO OFF}
+{$EXTENDEDSYNTAX ON}
+{$IMPORTEDDATA ON}
+{$IOCHECKS ON}
+{$LOCALSYMBOLS ON}
+{$LONGSTRINGS ON}
+{$OPENSTRINGS ON}
+{$OPTIMIZATION OFF}
+{$OVERFLOWCHECKS ON}
+{$RANGECHECKS ON}
+{$REFERENCEINFO ON}
+{$SAFEDIVIDE OFF}
+{$STACKFRAMES ON}
+{$TYPEDADDRESS OFF}
+{$VARSTRINGCHECKS ON}
+{$WRITEABLECONST OFF}
+{$MINENUMSIZE 1}
+{$IMAGEBASE $400000}
+{$DEFINE DEBUG}
+{$ENDIF IMPLICITBUILDING}
+{$DESCRIPTION 'P4D Environments IDE Extension'}
+{$LIBSUFFIX AUTO}
+{$DESIGNONLY}
+{$IMPLICITBUILD ON}
+
+requires
+  rtl,
+  designide;
+
+contains
+  PyEnvironment.Project.Helper in '..\src\Project\PyEnvironment.Project.Helper.pas',
+  PyEnvironment.Project.ManagerMenu in '..\src\Project\PyEnvironment.Project.ManagerMenu.pas',
+  PyEnvironment.Project.Menu in '..\src\Project\PyEnvironment.Project.Menu.pas',
+  PyEnvironment.Project in '..\src\Project\PyEnvironment.Project.pas',
+  PyEnvironment.Project.Types in '..\src\Project\PyEnvironment.Project.Types.pas',
+  PyEnvironment.Project.Registration in '..\src\Project\PyEnvironment.Project.Registration.pas';
+
+end.
+
