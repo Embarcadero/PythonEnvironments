@@ -89,12 +89,19 @@ type
   TPyEmbeddableDistribution = class(TPyCustomEmbeddableDistribution)
   private
     FScanned: boolean;
+    FDeleteEmbeddable: boolean;
+    procedure DoDeleteEmbeddable();
   protected
     procedure LoadSettings(); override;
   public
+    procedure Setup(); override;
     property Scanned: boolean read FScanned write FScanned;
   published
     property EmbeddablePackage;
+    /// <summary>
+    ///   Delete the embeddable zip file after install.
+    /// </summary>
+    property DeleteEmbeddable: boolean read FDeleteEmbeddable write FDeleteEmbeddable;
   end;
 
   TPyEmbeddableCustomCollection = class(TPyDistributionCollection);
@@ -111,20 +118,28 @@ type
   [ComponentPlatforms(pidAllPlatforms)]
   TPyEmbeddedEnvironment = class(TPyCustomEmbeddedEnvironment)
   private type
+    TScanRule = (srFolder, srFileName);
     TScanner = class(TPersistent)
     private
       FAutoScan: boolean;
+      FScanRule: TScanRule;
       FEmbeddablesPath: string;
       FEnvironmentPath: string;
+      FDeleteEmbeddable: boolean;
     public
       procedure Scan(ACallback: TProc<TPythonVersionProp, string>);
     published
       property AutoScan: boolean read FAutoScan write FAutoScan default false;
+      property ScanRule: TScanRule read FScanRule write FScanRule;
       property EmbeddablesPath: string read FEmbeddablesPath write FEmbeddablesPath;
       /// <summary>
       ///   Default environment path.
       /// </summary>
       property EnvironmentPath: string read FEnvironmentPath write FEnvironmentPath;
+      /// <summary>
+      ///   Delete the embeddable zip file after install.
+      /// </summary>
+      property DeleteEmbeddable: boolean read FDeleteEmbeddable write FDeleteEmbeddable;
     end;
   private
     FScanner: TScanner;
@@ -148,7 +163,8 @@ uses
   System.IOUtils, System.Character, System.StrUtils,
   PyEnvironment.Path,
   PyTools.ExecCmd,
-  PyEnvironment.Notification
+  PyEnvironment.Notification,
+  PyEnvironment.Project
   {$IFDEF POSIX}
   , Posix.SysStat, Posix.Stdlib, Posix.String_, Posix.Errno
   {$ENDIF}
@@ -199,41 +215,56 @@ end;
 {$ENDIF POSIX}
 
 function TPyCustomEmbeddableDistribution.FindExecutable: string;
+
+  function DoSearch(const APath: string): TArray<string>;
+  {$IFDEF POSIX}
+  var
+    LFile: string;
+  {$ENDIF POSIX}
+  begin
+    Result := TDirectory.GetFiles(APath, 'python*', TSearchOption.soTopDirectoryOnly,
+      function(const Path: string; const SearchRec: TSearchRec): boolean
+      begin
+        Result := Char.IsDigit(SearchRec.Name, Length(SearchRec.Name) - 1);
+      end);
+
+    {$IFDEF POSIX}
+    for LFile in Result do begin
+      if (TPath.GetFileName(LFile) = 'python' + PythonVersion) and (FileIsExecutable(LFile)) then
+        Exit(TArray<string>.Create(LFile));
+    end;
+
+    {$WARN SYMBOL_PLATFORM OFF}
+    LFile := Result[High(Result)];
+    if (TFileAttribute.faOwnerExecute in TFile.GetAttributes(LFile))
+      or (TFileAttribute.faGroupExecute in TFile.GetAttributes(LFile))
+      or (TFileAttribute.faOthersExecute in TFile.GetAttributes(LFile)) then //Avoiding symlinks
+        Exit(TArray<string>.Create(LFile));
+    {$WARN SYMBOL_PLATFORM ON}
+
+    {$ENDIF POSIX}
+  end;
+{$IFNDEF MSWINDOWS}
 var
   LFiles: TArray<string>;
-  {$IFDEF POSIX}
-  LFile: string;
-  {$ENDIF POSIX}
+{$ENDIF}
 begin
-  LFiles := [];
   {$IFDEF MSWINDOWS}
   Result := TPath.Combine(GetEnvironmentPath(), 'python.exe');
   if not TFile.Exists(Result) then
     Result := String.Empty;
+  {$ELSEIF DEFINED(ANDROID)}
+  Result := TPath.GetLibraryPath();
+  LFiles := DoSearch(Result);
+  if LFiles <> nil then
+    Exit(LFiles[Low(LFiles)]);
+  Result := TPath.Combine(GetEnvironmentPath(), 'bin');
   {$ELSE}
   Result := TPath.Combine(GetEnvironmentPath(), 'bin');
-  LFiles := TDirectory.GetFiles(Result, 'python*', TSearchOption.soTopDirectoryOnly,
-    function(const Path: string; const SearchRec: TSearchRec): boolean
-    begin
-      Result := Char.IsDigit(SearchRec.Name, Length(SearchRec.Name) - 1);
-    end);
 
-  {$IFDEF POSIX}
-  for LFile in LFiles do begin
-    if (TPath.GetFileName(LFile) = 'python' + PythonVersion) and (FileIsExecutable(LFile)) then
-      Exit(LFile);
-  end;
-  {$ENDIF POSIX}
+  LFiles := DoSearch(Result);
 
-  {$WARN SYMBOL_PLATFORM OFF}
   if Length(LFiles) > 0 then begin
-    Result := LFiles[High(LFiles)];
-    if (TFileAttribute.faOwnerExecute in TFile.GetAttributes(Result))
-      or (TFileAttribute.faGroupExecute in TFile.GetAttributes(Result))
-      or (TFileAttribute.faOthersExecute in TFile.GetAttributes(Result)) then //Avoiding symlinks
-        Exit;
-  {$WARN SYMBOL_PLATFORM ON}
-
     Result := LFiles[Low(LFiles)];
     if not TFile.Exists(Result) then
       Result := String.Empty;
@@ -243,11 +274,27 @@ begin
 end;
 
 function TPyCustomEmbeddableDistribution.FindSharedLibrary: string;
+
+  function DoSearch(const ALibName: string; const APath: string): TArray<string>;
+  var
+    LFile: string;
+    LSearch: string;
+  begin
+    LFile := TPath.Combine(APath, ALibName);
+    if not TFile.Exists(LFile) then begin
+      LSearch := ALibName.Replace(TPath.GetExtension(ALibName), '') + '*' + TPath.GetExtension(ALibName);
+      Result := TDirectory.GetFiles(
+        APath,
+        LSearch, //Python <= 3.7 might contain a "m" as a sufix.
+        TSearchOption.soTopDirectoryOnly);
+    end else
+      Result := [LFile];
+  end;
+
 var
   I: integer;
   LLibName: string;
   LPath: string;
-  LSearch: string;
   LFiles: TArray<string>;
 begin
   for I := Low(PYTHON_KNOWN_VERSIONS) to High(PYTHON_KNOWN_VERSIONS) do
@@ -258,22 +305,21 @@ begin
 
   {$IFDEF MSWINDOWS}
   LPath := GetEnvironmentPath();
+  {$ELSEIF DEFINED(ANDROID)}
+  LPath := TPath.GetLibraryPath();
+  LFiles := DoSearch(LLibName, LPath);
+  if LFiles <> nil then
+    Exit(LFiles[Low(LFiles)]);
+  LPath := GetEnvironmentPath();
   {$ELSE}
   LPath := TPath.Combine(GetEnvironmentPath(), 'lib');
   {$ENDIF}
 
-  Result := TPath.Combine(LPath, LLibName);
-  if not TFile.Exists(Result) then begin
-    LSearch := LLibName.Replace(TPath.GetExtension(LLibName), '') + '*' + TPath.GetExtension(LLibName);
-    LFiles := TDirectory.GetFiles(
-      LPath,
-      LSearch, //Python <= 3.7 might contain a "m" as a sufix.
-      TSearchOption.soTopDirectoryOnly);
-    if Length(LFiles) > 0 then begin
-      Result := LFiles[Low(LFiles)];
-    end else
-      Result := String.Empty;
-  end;
+  LFiles := DoSearch(LLibName, LPath);
+  if LFiles <> nil then
+    Result := LFiles[Low(LFiles)]
+  else
+    Result := String.Empty;
 
   {$IFDEF LINUX}
   if TFile.Exists(Result + '.1.0') then //Targets directly to the so file instead of a symlink.
@@ -311,10 +357,22 @@ end;
 
 { TPyEmbeddableDistribution }
 
+procedure TPyEmbeddableDistribution.DoDeleteEmbeddable;
+begin
+  TFile.Delete(EmbeddablePackage);
+end;
+
 procedure TPyEmbeddableDistribution.LoadSettings;
 begin
   if FScanned then
     inherited;
+end;
+
+procedure TPyEmbeddableDistribution.Setup;
+begin
+  inherited;
+  if FDeleteEmbeddable and EmbeddableExists() then
+    DoDeleteEmbeddable();
 end;
 
 { TPyEmbeddedEnvironment }
@@ -323,6 +381,11 @@ constructor TPyEmbeddedEnvironment.Create(AOwner: TComponent);
 begin
   inherited;
   FScanner := TScanner.Create();
+  PythonVersion := PythonProject.PythonVersion;
+  if PythonProject.Enabled then
+    FScanner.ScanRule := TScanRule.srFileName
+  else
+    FScanner.ScanRule := TScanRule.srFolder;
 end;
 
 destructor TPyEmbeddedEnvironment.Destroy;
@@ -337,10 +400,17 @@ begin
 end;
 
 procedure TPyEmbeddedEnvironment.Prepare;
-var
+var  
   LDistribution: TPyEmbeddableDistribution;
 begin
   if FScanner.AutoScan then begin
+    if PythonProject.Enabled then
+      if FScanner.EmbeddablesPath.IsEmpty() then begin
+        FScanner.EmbeddablesPath := TPyEnvironmentPath.ResolvePath(TPyEnvironmentPath.DEPLOY_PATH);
+        FScanner.ScanRule := TScanRule.srFileName;
+        FScanner.DeleteEmbeddable := true;
+      end;
+
     FScanner.Scan(
       procedure(APyVersionInfo: TPythonVersionProp; AEmbeddablePackage: string) begin
         if Assigned(Distributions.LocateEnvironment(APyVersionInfo.RegVersion)) then
@@ -355,7 +425,11 @@ begin
           APyVersionInfo.RegVersion);
         LDistribution.EmbeddablePackage := AEmbeddablePackage;
         LDistribution.OnZipProgress := FOnZipProgress;
+        LDistribution.DeleteEmbeddable := FScanner.DeleteEmbeddable;
       end);
+
+    if PythonVersion.IsEmpty() and (Distributions.Count > 0) then
+      PythonVersion := TPyEmbeddableDistribution(Distributions.Items[0]).PythonVersion;
   end;
   inherited;
 end;
@@ -373,6 +447,8 @@ var
   I: Integer;
   LPath: string;
   LFiles: TArray<string>;
+  LPythonVersion: string;
+  LSearchPatter: string;
 begin
   if not Assigned(ACallback) then
     Exit;
@@ -380,16 +456,31 @@ begin
   if not TDirectory.Exists(FEmbeddablesPath) then
     raise Exception.Create('Directory not found.');
 
-  for I := Low(PYTHON_KNOWN_VERSIONS) to High(PYTHON_KNOWN_VERSIONS) do begin
-    LPath := TPath.Combine(FEmbeddablesPath, PYTHON_KNOWN_VERSIONS[I].RegVersion);
-    if not TDirectory.Exists(LPath) then
-      Continue;
+  //Look for version named subfolders
+  if (FScanRule = TScanRule.srFolder) then begin
+    LSearchPatter := '*.zip';
+    for I := Low(PYTHON_KNOWN_VERSIONS) to High(PYTHON_KNOWN_VERSIONS) do begin
+      LPath := TPath.Combine(FEmbeddablesPath, PYTHON_KNOWN_VERSIONS[I].RegVersion);
+      if not TDirectory.Exists(LPath) then
+        Continue;
 
-    LFiles := TDirectory.GetFiles(LPath, '*.zip', TSearchOption.soTopDirectoryOnly);
-    if (Length(LFiles) = 0) then
-      Continue;
+      LFiles := TDirectory.GetFiles(LPath, LSearchPatter, TSearchOption.soTopDirectoryOnly);
+      if (Length(LFiles) = 0) then
+        Continue;
 
-    ACallback(PYTHON_KNOWN_VERSIONS[I], LFiles[0]);
+      ACallback(PYTHON_KNOWN_VERSIONS[I], LFiles[0]);
+    end;
+  end else if (FScanRule = TScanRule.srFileName) then begin
+    //Look for pattern named files
+    for I := Low(PYTHON_KNOWN_VERSIONS) to High(PYTHON_KNOWN_VERSIONS) do begin
+      LPythonVersion := PYTHON_KNOWN_VERSIONS[I].RegVersion;
+      LSearchPatter := Format('python3-*-%s*.zip', [LPythonVersion]);
+      LFiles := TDirectory.GetFiles(FEmbeddablesPath, LSearchPatter, TSearchOption.soTopDirectoryOnly);
+      if (Length(LFiles) = 0) then
+        Continue;
+
+      ACallback(PYTHON_KNOWN_VERSIONS[I], LFiles[0]);
+    end
   end;
 end;
 
