@@ -32,15 +32,16 @@ package dclP4DEnvironmentProject;
 
 requires
   rtl,
-  designide;
+  designide,
+  P4DEnvironmentProject;
 
 contains
-  PyEnvironment.Project.Helper in '..\src\Project\PyEnvironment.Project.Helper.pas',
-  PyEnvironment.Project.ManagerMenu in '..\src\Project\PyEnvironment.Project.ManagerMenu.pas',
-  PyEnvironment.Project.Menu in '..\src\Project\PyEnvironment.Project.Menu.pas',
-  PyEnvironment.Project in '..\src\Project\PyEnvironment.Project.pas',
-  PyEnvironment.Project.Types in '..\src\Project\PyEnvironment.Project.Types.pas',
-  PyEnvironment.Project.Registration in '..\src\Project\PyEnvironment.Project.Registration.pas';
+  PyEnvironment.Project.IDE.Helper in '..\src\Project\IDE\PyEnvironment.Project.IDE.Helper.pas',
+  PyEnvironment.Project.IDE.ManagerMenu in '..\src\Project\IDE\PyEnvironment.Project.IDE.ManagerMenu.pas',
+  PyEnvironment.Project.IDE.Menu in '..\src\Project\IDE\PyEnvironment.Project.IDE.Menu.pas',
+  PyEnvironment.Project.IDE.Deploy in '..\src\Project\IDE\PyEnvironment.Project.IDE.Deploy.pas',
+  PyEnvironment.Project.IDE.Registration in '..\src\Project\IDE\PyEnvironment.Project.IDE.Registration.pas',
+  PyEnvironment.Project.IDE.Types in '..\src\Project\IDE\PyEnvironment.Project.IDE.Types.pas';
 
 end.
 
