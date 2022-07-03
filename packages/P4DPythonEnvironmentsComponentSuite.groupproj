@@ -6,14 +6,17 @@
         <Projects Include="P4DTools.dproj">
             <Dependencies/>
         </Projects>
-        <Projects Include="P4DEnvironment.dproj">
-            <Dependencies/>
-        </Projects>
-        <Projects Include="dclP4DEnvironment.dproj">
+        <Projects Include="P4DEnvironmentProject.dproj">
             <Dependencies/>
         </Projects>
         <Projects Include="dclP4DEnvironmentProject.dproj">
-            <Dependencies/>
+            <Dependencies>P4DEnvironmentProject.dproj</Dependencies>
+        </Projects>
+        <Projects Include="P4DEnvironment.dproj">
+            <Dependencies>P4DTools.dproj;P4DEnvironmentProject.dproj</Dependencies>
+        </Projects>
+        <Projects Include="dclP4DEnvironment.dproj">
+            <Dependencies>P4DEnvironment.dproj</Dependencies>
         </Projects>
     </ItemGroup>
     <ProjectExtensions>
@@ -32,41 +35,50 @@
     <Target Name="P4DTools:Make">
         <MSBuild Projects="P4DTools.dproj" Targets="Make"/>
     </Target>
-    <Target Name="P4DEnvironment">
-        <MSBuild Projects="P4DEnvironment.dproj"/>
+    <Target Name="P4DEnvironmentProject">
+        <MSBuild Projects="P4DEnvironmentProject.dproj"/>
     </Target>
-    <Target Name="P4DEnvironment:Clean">
-        <MSBuild Projects="P4DEnvironment.dproj" Targets="Clean"/>
+    <Target Name="P4DEnvironmentProject:Clean">
+        <MSBuild Projects="P4DEnvironmentProject.dproj" Targets="Clean"/>
     </Target>
-    <Target Name="P4DEnvironment:Make">
-        <MSBuild Projects="P4DEnvironment.dproj" Targets="Make"/>
+    <Target Name="P4DEnvironmentProject:Make">
+        <MSBuild Projects="P4DEnvironmentProject.dproj" Targets="Make"/>
     </Target>
-    <Target Name="dclP4DEnvironment">
-        <MSBuild Projects="dclP4DEnvironment.dproj"/>
-    </Target>
-    <Target Name="dclP4DEnvironment:Clean">
-        <MSBuild Projects="dclP4DEnvironment.dproj" Targets="Clean"/>
-    </Target>
-    <Target Name="dclP4DEnvironment:Make">
-        <MSBuild Projects="dclP4DEnvironment.dproj" Targets="Make"/>
-    </Target>
-    <Target Name="dclP4DEnvironmentProject">
+    <Target Name="dclP4DEnvironmentProject" DependsOnTargets="P4DEnvironmentProject">
         <MSBuild Projects="dclP4DEnvironmentProject.dproj"/>
     </Target>
-    <Target Name="dclP4DEnvironmentProject:Clean">
+    <Target Name="dclP4DEnvironmentProject:Clean" DependsOnTargets="P4DEnvironmentProject:Clean">
         <MSBuild Projects="dclP4DEnvironmentProject.dproj" Targets="Clean"/>
     </Target>
-    <Target Name="dclP4DEnvironmentProject:Make">
+    <Target Name="dclP4DEnvironmentProject:Make" DependsOnTargets="P4DEnvironmentProject:Make">
         <MSBuild Projects="dclP4DEnvironmentProject.dproj" Targets="Make"/>
     </Target>
+    <Target Name="P4DEnvironment" DependsOnTargets="P4DTools;P4DEnvironmentProject">
+        <MSBuild Projects="P4DEnvironment.dproj"/>
+    </Target>
+    <Target Name="P4DEnvironment:Clean" DependsOnTargets="P4DTools:Clean;P4DEnvironmentProject:Clean">
+        <MSBuild Projects="P4DEnvironment.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="P4DEnvironment:Make" DependsOnTargets="P4DTools:Make;P4DEnvironmentProject:Make">
+        <MSBuild Projects="P4DEnvironment.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="dclP4DEnvironment" DependsOnTargets="P4DEnvironment">
+        <MSBuild Projects="dclP4DEnvironment.dproj"/>
+    </Target>
+    <Target Name="dclP4DEnvironment:Clean" DependsOnTargets="P4DEnvironment:Clean">
+        <MSBuild Projects="dclP4DEnvironment.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="dclP4DEnvironment:Make" DependsOnTargets="P4DEnvironment:Make">
+        <MSBuild Projects="dclP4DEnvironment.dproj" Targets="Make"/>
+    </Target>
     <Target Name="Build">
-        <CallTarget Targets="P4DTools;P4DEnvironment;dclP4DEnvironment;dclP4DEnvironmentProject"/>
+        <CallTarget Targets="P4DTools;P4DEnvironmentProject;dclP4DEnvironmentProject;P4DEnvironment;dclP4DEnvironment"/>
     </Target>
     <Target Name="Clean">
-        <CallTarget Targets="P4DTools:Clean;P4DEnvironment:Clean;dclP4DEnvironment:Clean;dclP4DEnvironmentProject:Clean"/>
+        <CallTarget Targets="P4DTools:Clean;P4DEnvironmentProject:Clean;dclP4DEnvironmentProject:Clean;P4DEnvironment:Clean;dclP4DEnvironment:Clean"/>
     </Target>
     <Target Name="Make">
-        <CallTarget Targets="P4DTools:Make;P4DEnvironment:Make;dclP4DEnvironment:Make;dclP4DEnvironmentProject:Make"/>
+        <CallTarget Targets="P4DTools:Make;P4DEnvironmentProject:Make;dclP4DEnvironmentProject:Make;P4DEnvironment:Make;dclP4DEnvironment:Make"/>
     </Target>
     <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
 </Project>

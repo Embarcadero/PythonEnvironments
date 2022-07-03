@@ -10,21 +10,21 @@ package dclP4DEnvironment;
 {$EXTENDEDSYNTAX ON}
 {$IMPORTEDDATA ON}
 {$IOCHECKS ON}
-{$LOCALSYMBOLS ON}
+{$LOCALSYMBOLS OFF}
 {$LONGSTRINGS ON}
 {$OPENSTRINGS ON}
-{$OPTIMIZATION OFF}
-{$OVERFLOWCHECKS ON}
-{$RANGECHECKS ON}
-{$REFERENCEINFO ON}
+{$OPTIMIZATION ON}
+{$OVERFLOWCHECKS OFF}
+{$RANGECHECKS OFF}
+{$REFERENCEINFO OFF}
 {$SAFEDIVIDE OFF}
-{$STACKFRAMES ON}
+{$STACKFRAMES OFF}
 {$TYPEDADDRESS OFF}
 {$VARSTRINGCHECKS ON}
 {$WRITEABLECONST OFF}
 {$MINENUMSIZE 1}
 {$IMAGEBASE $400000}
-{$DEFINE DEBUG}
+{$DEFINE RELEASE}
 {$ENDIF IMPLICITBUILDING}
 {$DESCRIPTION 'P4D AI&ML - Python environments'}
 {$LIBSUFFIX AUTO}
@@ -33,9 +33,12 @@ package dclP4DEnvironment;
 
 requires
   rtl,
-  p4denvironment;
+  p4denvironment,
+  designide,
+  dclp4denvironmentproject;
 
 contains
-  PyEnvironment.Registration in '..\src\PyEnvironment.Registration.pas';
+  PyEnvironment.Registration in '..\src\PyEnvironment.Registration.pas',
+  PyEnvionment.Editors in '..\src\PyEnvionment.Editors.pas';
 
 end.
