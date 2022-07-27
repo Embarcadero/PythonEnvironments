@@ -74,6 +74,9 @@ begin
   Result := ['LD_LIBRARY_PATH=' + ExtractFileDir(ASharedLibrary),
              'PYTHONHOME=' + AHome,
              'PATH=' + ExtractFileDir(AExecutable)];
+    {$IFDEF ANDROID}
+    Result := Result + ['TMPDIR=' + TPath.GetTempPath()];
+    {$ENDIF ANDROID}
   {$ENDIF MSWINDOWS}
 end;
 
