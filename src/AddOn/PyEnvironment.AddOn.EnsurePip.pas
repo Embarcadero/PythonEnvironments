@@ -77,6 +77,7 @@ var
   LOutput: string;
 begin
   inherited;
+  { TODO : Check for valida executable and shared library files }
   if (TExecCmdService.Cmd(ADistribution.Executable,
         TExecCmdArgs.BuildArgv(
           ADistribution.Executable, ['-m', 'pip', '--version']),
