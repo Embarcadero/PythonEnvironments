@@ -94,7 +94,10 @@
         </DelphiCompile>
         <DCCReference Include="rtl.dcp"/>
         <DCCReference Include="p4denvironment.dcp"/>
+        <DCCReference Include="designide.dcp"/>
+        <DCCReference Include="dclp4denvironmentproject.dcp"/>
         <DCCReference Include="..\src\PyEnvironment.Registration.pas"/>
+        <DCCReference Include="..\src\PyEnvionment.Editors.pas"/>
         <RcItem Include="..\images\png\128x128\embbeded.png">
             <ResourceType>RCDATA</ResourceType>
             <ResourceId>TPYEMBEDDEDENVIRONMENT128_PNG</ResourceId>
