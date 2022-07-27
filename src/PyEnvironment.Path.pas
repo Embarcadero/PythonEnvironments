@@ -34,6 +34,9 @@ interface
 
 type
   TPyEnvironmentPath = class
+  public const
+    DEPLOY_PATH = '$(DEPLOY_PATH)';
+  public
     /// <summary>
     /// This function might resolve path variables, relative paths and whatever regarding paths
     /// </summary>
@@ -48,16 +51,16 @@ uses
 { TPyEnvironmentPath }
 
 class function TPyEnvironmentPath.ResolvePath(const APath: string): string;
-var
-  LFilePath: string;
 begin
-  if (APath <> ExpandFileName(APath)) then begin
+  if (APath <> ExpandFileName(APath)) or (APath = DEPLOY_PATH) then begin
     {$IFDEF ANDROID}
-    LFilePath := TPath.GetDocumentsPath();
+    Result := TPath.GetDocumentsPath();
     {$ELSE}
-    LFilePath := TPath.GetDirectoryName(GetModuleName(HInstance));
+    Result := TPath.GetDirectoryName(GetModuleName(HInstance));
     {$ENDIF}
-    Result := TPath.Combine(LFilePath, APath);
+
+    if (APath <> DEPLOY_PATH) then
+      Result := TPath.Combine(Result, APath);
   end else
     Result := APath;
 end;
