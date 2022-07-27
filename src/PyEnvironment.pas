@@ -173,8 +173,7 @@ end;
 
 procedure TPyCustomEnvironment.Setup(APythonVersion: string);
 begin
-  InternalSetup(
-    IfThen(APythonVersion.IsEmpty(), PythonVersion, APythonVersion));
+  InternalSetup(APythonVersion);
 end;
 
 function TPyCustomEnvironment.SetupAsync(APythonVersion: string): ITask;
@@ -324,6 +323,8 @@ begin
   end;
 
   Prepare();
+
+  APythonVersion := IfThen(APythonVersion.IsEmpty(), PythonVersion, APythonVersion);
 
   LDistribution := FDistributions.LocateEnvironment(APythonVersion);
   if not Assigned(LDistribution) then
