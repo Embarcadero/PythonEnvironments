@@ -96,10 +96,10 @@ type
     constructor Create(AOwner: TComponent); override;
     destructor Destroy(); override;
 
-    procedure Setup(APythonVersion: string);
-    function SetupAsync(APythonVersion: string): ITask;
+    procedure Setup(APythonVersion: string = '');
+    function SetupAsync(APythonVersion: string = ''): ITask;
 
-    function Activate(APythonVersion: string): boolean;
+    function Activate(APythonVersion: string = ''): boolean;
     procedure Deactivate();
   public
     property Distributions: TPyDistributionCollection read FDistributions write SetEnvironments;
@@ -131,8 +131,8 @@ type
 implementation
 
 uses
+  System.IOUtils, System.StrUtils,
   TypInfo,
-  System.IOUtils,
   PyEnvironment.Path;
 
 { TPyCustomEnvironment }
@@ -179,13 +179,15 @@ end;
 function TPyCustomEnvironment.SetupAsync(APythonVersion: string): ITask;
 begin
   Result := TTask.Run(procedure() begin
-    InternalSetup(APythonVersion);
+    InternalSetup(
+      IfThen(APythonVersion.IsEmpty(), PythonVersion, APythonVersion));
   end);
 end;
 
 function TPyCustomEnvironment.Activate(APythonVersion: string): boolean;
 begin
-  Result := InternalActivate(APythonVersion);
+  Result := InternalActivate(
+    IfThen(APythonVersion.IsEmpty(), PythonVersion, APythonVersion));
 end;
 
 procedure TPyCustomEnvironment.Deactivate;
@@ -321,6 +323,8 @@ begin
   end;
 
   Prepare();
+
+  APythonVersion := IfThen(APythonVersion.IsEmpty(), PythonVersion, APythonVersion);
 
   LDistribution := FDistributions.LocateEnvironment(APythonVersion);
   if not Assigned(LDistribution) then
