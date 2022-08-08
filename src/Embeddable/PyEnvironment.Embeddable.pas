@@ -236,10 +236,9 @@ function TPyCustomEmbeddableDistribution.FindExecutable: string;
     end;
     {$ENDIF POSIX}
   end;
-{$IFNDEF MSWINDOWS}
+
 var
   LFiles: TArray<string>;
-{$ENDIF}
 begin
   {$IFDEF MSWINDOWS}
   Result := TPath.Combine(GetEnvironmentPath(), 'python.exe');
