@@ -244,6 +244,8 @@ begin
   Result := TPath.Combine(GetEnvironmentPath(), 'python.exe');
   if not TFile.Exists(Result) then
     Exit(String.Empty);
+  // If we get this far and we're in a Windows only section then we're done so just exit with the Result intact
+  Exit(Result);
   {$ELSEIF DEFINED(ANDROID)}
   //Let's try it in the library path first - we should place it in the library path in Android
   Result := TPath.GetLibraryPath();
