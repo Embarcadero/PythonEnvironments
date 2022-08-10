@@ -236,17 +236,21 @@ function TPyCustomEmbeddableDistribution.FindExecutable: string;
     end;
     {$ENDIF POSIX}
   end;
-{$IFNDEF MSWINDOWS}
+
 var
   LFiles: TArray<string>;
-{$ENDIF}
 begin
   {$IFDEF MSWINDOWS}
+  //If we get this far and we're in a Windows only section
+  //then we're done so just exit with the Result intact
   Result := TPath.Combine(GetEnvironmentPath(), 'python.exe');
-  if not TFile.Exists(Result) then
+  if TFile.Exists(Result) then
+    Exit(Result)
+  else
     Exit(String.Empty);
   {$ELSEIF DEFINED(ANDROID)}
-  //Let's try it in the library path first - we should place it in the library path in Android
+  //Let's try it in the library path first
+  //we should place it in the library path in Android
   Result := TPath.GetLibraryPath();
   LFiles := DoSearch(Result);
   if LFiles <> nil then
