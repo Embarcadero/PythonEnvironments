@@ -34,6 +34,12 @@
         <CfgParent>Base</CfgParent>
         <Base>true</Base>
     </PropertyGroup>
+    <PropertyGroup Condition="('$(Platform)'=='Win32' and '$(Cfg_2)'=='true') or '$(Cfg_2_Win32)'!=''">
+        <Cfg_2_Win32>true</Cfg_2_Win32>
+        <CfgParent>Cfg_2</CfgParent>
+        <Cfg_2>true</Cfg_2>
+        <Base>true</Base>
+    </PropertyGroup>
     <PropertyGroup Condition="'$(Base)'!=''">
         <SanitizedProjectName>dclP4DEnvironmentProject</SanitizedProjectName>
         <DCC_CBuilderOutput>All</DCC_CBuilderOutput>
@@ -78,19 +84,13 @@
         <DCC_LocalDebugSymbols>false</DCC_LocalDebugSymbols>
         <DCC_SymbolReferenceInfo>0</DCC_SymbolReferenceInfo>
     </PropertyGroup>
+    <PropertyGroup Condition="'$(Cfg_2_Win32)'!=''">
+        <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
+    </PropertyGroup>
     <ItemGroup>
         <DelphiCompile Include="$(MainSource)">
             <MainSource>MainSource</MainSource>
         </DelphiCompile>
-        <DCCReference Include="rtl.dcp"/>
-        <DCCReference Include="designide.dcp"/>
-        <DCCReference Include="P4DEnvironmentProject.dcp"/>
-        <DCCReference Include="..\src\Project\IDE\PyEnvironment.Project.IDE.Helper.pas"/>
-        <DCCReference Include="..\src\Project\IDE\PyEnvironment.Project.IDE.ManagerMenu.pas"/>
-        <DCCReference Include="..\src\Project\IDE\PyEnvironment.Project.IDE.Menu.pas"/>
-        <DCCReference Include="..\src\Project\IDE\PyEnvironment.Project.IDE.Deploy.pas"/>
-        <DCCReference Include="..\src\Project\IDE\PyEnvironment.Project.IDE.Registration.pas"/>
-        <DCCReference Include="..\src\Project\IDE\PyEnvironment.Project.IDE.Types.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>
