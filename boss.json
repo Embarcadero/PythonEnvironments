@@ -6,10 +6,10 @@
 	"mainsrc": "./src",
 	"projects": [
 		"./packages/P4DTools.dproj",
+		"./packages/P4DEnvironmentProject",	
+		"./packages/dclP4DEnvironmentProject",	
 		"./packages/P4DEnvironment.dproj",
-		"./packages/dclP4DEnvironment.dproj",
-		"./packages/P4DEnvironmentProject",
-		"./packages/dclP4DEnvironmentProject"		
+		"./packages/dclP4DEnvironment.dproj"		
 	],
 	"dependencies": {
 		"https://github.com/embarcadero/python4delphi": "^1.1"
