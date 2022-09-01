@@ -5,7 +5,7 @@
 		"https://github.com/embarcadero/python4delphi": {
 			"name": "python4delphi",
 			"version": "1.1.1",
-			"hash": "4f08d794fab53bcf440fd520ae839b96",
+			"hash": "f1c9b702959bfdfb016b5f6068b774eb",
 			"artifacts": {
 				"dcp": [
 					"Python.bpi",
