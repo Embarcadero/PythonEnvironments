@@ -130,22 +130,24 @@ procedure TPyLocalEnvironment.Prepare;
 var
   LFilePath: string;
 begin
-  LFilePath := TPyEnvironmentPath.ResolvePath(FFilePath);
-  if not TFile.Exists(LFilePath) then
-    raise Exception.Create('File not found.');
-
-  EnumerateEnvironments(
-    procedure(APythonVersion: string; AEnvironmentInfo: TJSONObject)
-    var
-      LDistribution: TPyLocalDistribution;
+  if not FFilePath.IsEmpty then
     begin
-      LDistribution := TPyLocalDistribution(Distributions.Add());
-      LDistribution.PythonVersion := APythonVersion;
-      LDistribution.Home := AEnvironmentInfo.GetValue<string>('home');
-      LDistribution.SharedLibrary := AEnvironmentInfo.GetValue<string>('shared_library');
-      LDistribution.Executable := AEnvironmentInfo.GetValue<string>('executable');
-    end);
+	  LFilePath := TPyEnvironmentPath.ResolvePath(FFilePath);
+	  if not TFile.Exists(LFilePath) then
+		raise Exception.Create('File not found.');
 
+	  EnumerateEnvironments(
+		procedure(APythonVersion: string; AEnvironmentInfo: TJSONObject)
+		var
+		  LDistribution: TPyLocalDistribution;
+		begin
+		  LDistribution := TPyLocalDistribution(Distributions.Add());
+		  LDistribution.PythonVersion := APythonVersion;
+		  LDistribution.Home := AEnvironmentInfo.GetValue<string>('home');
+		  LDistribution.SharedLibrary := AEnvironmentInfo.GetValue<string>('shared_library');
+		  LDistribution.Executable := AEnvironmentInfo.GetValue<string>('executable');
+		end);
+	end;
   inherited;
 end;
 
