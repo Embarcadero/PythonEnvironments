@@ -97,9 +97,6 @@ var
   LFilePath: string;
 begin
   LFilePath := TPyEnvironmentPath.ResolvePath(FFilePath);
-  if not TFile.Exists(LFilePath) then
-    raise EFileNotFoundException.CreateFmt('File not found.' + #13#10 + '%s', [LFilePath]);
-
   LPythonVersions := TJSONObject.ParseJSONValue(TFile.ReadAllText(LFilePath));
   try
     if not (Assigned(LPythonVersions) and (LPythonVersions is TJSONArray)) then
@@ -132,7 +129,7 @@ var
 begin
   LFilePath := TPyEnvironmentPath.ResolvePath(FFilePath);
   if not TFile.Exists(LFilePath) then
-    raise Exception.Create('File not found.');
+    raise EFileNotFoundException.CreateFmt('File not found.' + #13#10 + '%s', [LFilePath]);
 
   EnumerateEnvironments(
     procedure(APythonVersion: string; AEnvironmentInfo: TJSONObject)
