@@ -7,7 +7,7 @@
         <MainSource>dclP4DEnvironment.dpk</MainSource>
         <Platform Condition="'$(Platform)'==''">Win32</Platform>
         <ProjectGuid>{06B60342-A1FD-4857-AF3E-1572D1711554}</ProjectGuid>
-        <ProjectVersion>19.4</ProjectVersion>
+        <ProjectVersion>19.5</ProjectVersion>
         <TargetedPlatforms>1</TargetedPlatforms>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Config)'=='Base' or '$(Base)'!=''">
@@ -92,6 +92,12 @@
         <DelphiCompile Include="$(MainSource)">
             <MainSource>MainSource</MainSource>
         </DelphiCompile>
+        <DCCReference Include="rtl.dcp"/>
+        <DCCReference Include="p4denvironment.dcp"/>
+        <DCCReference Include="designide.dcp"/>
+        <DCCReference Include="dclp4denvironmentproject.dcp"/>
+        <DCCReference Include="..\src\PyEnvironment.Registration.pas"/>
+        <DCCReference Include="..\src\PyEnvionment.Editors.pas"/>
         <RcItem Include="..\images\png\128x128\embbeded.png">
             <ResourceType>RCDATA</ResourceType>
             <ResourceId>TPYEMBEDDEDENVIRONMENT128_PNG</ResourceId>
@@ -411,6 +417,7 @@
                 <Platform value="Win32">True</Platform>
                 <Platform value="Win64">False</Platform>
                 <Platform value="iOSDevice64">False</Platform>
+                <Platform value="iOSSimARM64">False</Platform>
             </Platforms>
         </BorlandProject>
         <ProjectFileVersion>12</ProjectFileVersion>
