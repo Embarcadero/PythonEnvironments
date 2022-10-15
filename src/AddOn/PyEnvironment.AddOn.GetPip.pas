@@ -86,17 +86,7 @@ var
   LOut: string;
 begin
   inherited;
-
-  if (TExecCmdService.Cmd(ADistribution.Executable,
-        TExecCmdArgs.BuildArgv(
-          ADistribution.Executable, ['-m', 'pip', '--version']),
-        TExecCmdArgs.BuildEnvp(
-          ADistribution.Home,
-          ADistribution.Executable,
-          ADistribution.SharedLibrary)
-      ).Run().Wait() = EXIT_SUCCESS) then
-        Exit;
-
+  
   //Patch the _pth file to work with site packages
   LPths := TDirectory.GetFiles(
     ADistribution.Home, 'python*._pth', TSearchOption.soTopDirectoryOnly);
