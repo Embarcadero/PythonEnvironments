@@ -314,13 +314,9 @@ procedure TPyCustomEnvironment.InternalSetup(APythonVersion: string);
 var
   LDistribution: TPyDistribution;
 begin
-  if (TThread.CurrentThread.ThreadID <> MainThreadID) then
-    TThread.Synchronize(nil, procedure() begin
-      DoBeforeSetup(APythonVersion);
-    end)
-  else begin
+  TThread.Synchronize(nil, procedure() begin
     DoBeforeSetup(APythonVersion);
-  end;
+  end);
 
   Prepare();
 
@@ -332,13 +328,9 @@ begin
 
   LDistribution.Setup();
 
-  if (TThread.CurrentThread.ThreadID <> MainThreadID) then
-    TThread.Synchronize(nil, procedure() begin
-      DoAfterSetup(APythonVersion, LDistribution);
-    end)
-  else begin
+  TThread.Synchronize(nil, procedure() begin
     DoAfterSetup(APythonVersion, LDistribution);
-  end;
+  end)
 end;
 
 procedure TPyCustomEnvironment.Prepare;
