@@ -39,6 +39,8 @@ uses
 type
   [ComponentPlatforms(pidAllPlatforms)]
   TPyEnvironmentAddOnGetPip = class(TPyEnvironmentCustomAddOn)
+  private
+	  FUpgrade: Boolean;
   protected
     procedure SetTriggers(const Value: TPyEnvironmentaddOnTriggers); override;
     procedure InternalExecute(const ATriggeredBy: TPyEnvironmentaddOnTrigger;
@@ -47,6 +49,7 @@ type
     constructor Create(AOwner: TComponent); override;
   published
     property Triggers default [TPyEnvironmentaddOnTrigger.trAfterSetup];
+    property Upgrade: Boolean Read FUpgrade Write FUpgrade;
   end;
 
   EPipSetupFailed = class(Exception);
@@ -86,7 +89,22 @@ var
   LOut: string;
 begin
   inherited;
-  
+
+  // If upgrade requested then skip PIP checking
+  if not FUpgrade then
+    begin
+	  // Do we have PIP?
+      if (TExecCmdService.Cmd(ADistribution.Executable,
+            TExecCmdArgs.BuildArgv(
+              ADistribution.Executable, ['-m', 'pip', '--version']),
+            TExecCmdArgs.BuildEnvp(
+              ADistribution.Home,
+              ADistribution.Executable,
+              ADistribution.SharedLibrary)
+          ).Run().Wait() = EXIT_SUCCESS) then
+            Exit;
+      end;
+
   //Patch the _pth file to work with site packages
   LPths := TDirectory.GetFiles(
     ADistribution.Home, 'python*._pth', TSearchOption.soTopDirectoryOnly);
