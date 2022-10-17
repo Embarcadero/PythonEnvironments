@@ -184,12 +184,9 @@ procedure TPyCustomEmbeddableDistribution.DoZipProgressEvt(Sender: TObject; File
   Header: TZipHeader; Position: Int64);
 begin
   if Assigned(FOnZipProgress) then
-    if (TThread.Current.ThreadID <> MainThreadID) then
-      TThread.Queue(nil, procedure() begin
-        FOnZipProgress(Sender, Self, FileName, Header, Position);
-      end)
-    else
+    TThread.Queue(nil, procedure() begin
       FOnZipProgress(Sender, Self, FileName, Header, Position);
+    end)
 end;
 
 function TPyCustomEmbeddableDistribution.EmbeddableExists: boolean;
@@ -226,12 +223,16 @@ function TPyCustomEmbeddableDistribution.FindExecutable: string;
     Result := TDirectory.GetFiles(APath, 'python*', TSearchOption.soTopDirectoryOnly,
       function(const Path: string; const SearchRec: TSearchRec): boolean
       begin
-        Result := Char.IsDigit(SearchRec.Name, Length(SearchRec.Name) - 1);
+        var LFileName: string := SearchRec.Name;
+        if LFileName.EndsWith('m') then //3.7 and lower contain a "m" as sufix.
+          LFileName := LFileName.Remove(Length(LFileName) - 1);
+
+        Result := Char.IsDigit(LFileName, Length(LFileName) - 1);
       end);
 
     {$IFDEF POSIX}
     for LFile in Result do begin
-      if (TPath.GetFileName(LFile) = 'python' + PythonVersion) and (FileIsExecutable(LFile)) then
+      if (TPath.GetFileName(LFile).StartsWith('python' + PythonVersion)) and (FileIsExecutable(LFile)) then
         Exit(TArray<string>.Create(LFile));
     end;
     {$ENDIF POSIX}
@@ -281,7 +282,7 @@ function TPyCustomEmbeddableDistribution.FindSharedLibrary: string;
       LSearch := ALibName.Replace(TPath.GetExtension(ALibName), '') + '*' + TPath.GetExtension(ALibName);
       Result := TDirectory.GetFiles(
         APath,
-        LSearch, //Python <= 3.7 might contain a "m" as a sufix.
+        LSearch, //Python <= 3.7 might contain a "m" as sufix.
         TSearchOption.soTopDirectoryOnly);
     end else
       Result := [LFile];
