@@ -22,6 +22,7 @@ package P4DTools;
 {$VARSTRINGCHECKS ON}
 {$WRITEABLECONST OFF}
 {$MINENUMSIZE 1}
+{$IMAGEBASE $400000}
 {$DEFINE RELEASE}
 {$ENDIF IMPLICITBUILDING}
 {$LIBSUFFIX AUTO}
@@ -34,6 +35,7 @@ requires
 contains
   PyTools.ExecCmd in '..\src\Tools\PyTools.ExecCmd.pas',
   PyTools.ExecCmd.Args in '..\src\Tools\PyTools.ExecCmd.Args.pas',
-  PyTools.ExecCmd.Platform in '..\src\Tools\PyTools.ExecCmd.Platform.pas';
+  PyTools.ExecCmd.Platform in '..\src\Tools\PyTools.ExecCmd.Platform.pas',
+  PyTools.Cancelation in '..\src\Tools\PyTools.Cancelation.pas';
 
 end.
