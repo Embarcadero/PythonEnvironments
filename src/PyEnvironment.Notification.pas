@@ -72,10 +72,6 @@ type
   ENotificationCenterNotAvailable = class(Exception);
 
 const
-  /// <summary>
-  ///   Tell the environment clients we are running async and they might schedule their tasks.
-  /// </summary>
-  INIT_NOTIFICATION = $0;
   BEFORE_SETUP_NOTIFICATION = $1;
   AFTER_SETUP_NOTIFICATION = $2;
   BEFORE_ACTIVATE_NOTIFICATION = $3;
@@ -86,11 +82,9 @@ const
   AFTER_CREATE_ENVIRONMENT_NOTIFICATION = $8;
   BEFORE_UNZIP_NOTIFICATION = $9;
   AFTER_UNZIP_NOTIFICATION = $A;
-  INTERNAL_READY_NOTIFICATION = $B;
-  FINALIZE_NOTIFICATION = $FF;
-
-type
-  TPyEnvironmentNotifications = INIT_NOTIFICATION..FINALIZE_NOTIFICATION;
+  INTERNAL_CANCELED_NOTIFICATION = $B;
+  INTERNAL_READY_NOTIFICATION = $C;
+  INTERNAL_ERROR_NOTIFICATION = $D;
 
 implementation
 

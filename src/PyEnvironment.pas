@@ -32,8 +32,14 @@ unit PyEnvironment;
 interface
 
 uses
-  System.Classes, System.SysUtils, System.Threading, System.Generics.Collections,
+  System.Classes,
+  System.SysUtils,
+  System.Threading,
+  System.Generics.Collections,
+  System.Types,
+  System.SysConst,
   PythonEngine,
+  PyTools.Cancelation,
   PyEnvironment.Distribution,
   PyEnvironment.Notification;
 
@@ -45,8 +51,42 @@ type
   TPyEnvironmentBeforeDeactivate = procedure(Sender: TObject; const APythonVersion: string) of object;
   TPyEnvironmentAfterDeactivate = procedure(Sender: TObject; const APythonVersion: string) of object;
   TPyEnvironmentReady = procedure(Sender: TObject; const APythonVersion: string) of object;
+  TPyEnvironmentError = procedure(Sender: TObject; const AException: Exception) of object;
 
   TPyCustomEnvironment = class(TComponent, IEnvironmentNotifier<TPyCustomEnvironment>)
+  protected type
+    TEnvironmentTaskAsyncResult = class(TBaseAsyncResult)
+    public type
+      TScheduler = (Task, Queue, ForceQueue);
+    private
+      FAsyncTask: TProc;
+      FCancelCallback: TProc;
+      FAsyncCallback: TAsyncCallback;
+      FScheduler: TScheduler;
+    protected
+      procedure Complete; override;
+      procedure Schedule; override;
+      procedure AsyncDispatch; override;
+      function DoCancel: Boolean; override;
+    public
+      constructor Create(const AContext: TObject; const AAsyncTask: TProc;
+        const ACancelCallback: TProc = nil; AAsyncCallback: TAsyncCallback = nil);
+
+      property Scheduler: TScheduler read FScheduler write FScheduler;
+    end;
+    TAsyncFuncCallback<TResult> = reference to procedure (const ASyncResult: IAsyncResult; const AResult: TResult);
+    TAsyncSetup = class sealed(TEnvironmentTaskAsyncResult);
+    TAsyncActivate<TResult> = class sealed(TEnvironmentTaskAsyncResult)
+    private
+      FRetVal: TResult;
+      FSetupResult: IAsyncResult;
+    protected
+      procedure Schedule; override;
+    protected
+      constructor Create(const AContext: TObject; const ASetupResult: IAsyncResult; const AAsyncTask: TFunc<TResult>;
+        const ACancelCallback: TProc = nil; AAsyncFuncCallback: TAsyncFuncCallback<TResult> = nil);
+      function GetRetVal: TResult;
+    end;
   private
     FDistributions: TPyDistributionCollection;
     FAutoLoad: boolean;
@@ -59,50 +99,90 @@ type
     FAfterActivate: TPyEnvironmentAfterActivate;
     FBeforeDeactivate: TPyEnvironmentBeforeDeactivate;
     FAfterDeactivate: TPyEnvironmentAfterDeactivate;
+    FOnReady: TPyEnvironmentReady;
+    FOnError: TPyEnvironmentError;
     //Delegators
     FEnvironmentNotifier: IEnvironmentNotifier<TPyCustomEnvironment>;
-    FOnReady: TPyEnvironmentReady;
-    procedure SetEnvironments(const ADistributions: TPyDistributionCollection);
+    procedure SetDistributions(const ADistributions: TPyDistributionCollection);
     procedure SetPythonEngine(const APythonEngine: TPythonEngine);
     procedure DoAutoLoad;
     //Hooked routines
-    procedure InternalSetup(APythonVersion: string);
-    function InternalActivate(APythonVersion: string): boolean;
+    procedure InternalSetup(const APythonVersion: string;
+      const ACancelation: ICancelation);
+    function InternalActivate(const APythonVersion: string;
+      const ACancelation: ICancelation): boolean;
     procedure InternalDeactivate();
-    //Events handlers
-    procedure DoInit;
+    //State handlers
     procedure DoBeforeSetup(APythonVersion: string);
     procedure DoAfterSetup(APythonVersion: string; const ADistribution: TPyDistribution);
     procedure DoBeforeActivate(APythonVersion: string);
     procedure DoAfterActivate(APythonVersion: string; const ADistribution: TPyDistribution; var Result: Boolean);
     procedure DoBeforeDeactivate;
     procedure DoAfterDeactivate;
-    procedure DoInternalReady;
+    /// <summary>
+    ///   It won't be ready until setup, activate, run add-ons and install packages
+    /// </summary>
+    //procedure DoInternalReady;
+    procedure DoInternalError;
   protected
     property EnvironmentNotifier: IEnvironmentNotifier<TPyCustomEnvironment>
       read FEnvironmentNotifier
       implements IEnvironmentNotifier<TPyCustomEnvironment>;
   protected
-    procedure Loaded(); override;
     procedure Notification(AComponent: TComponent; AOperation: TOperation); override;
   protected
     procedure SetPythonVersion(const Value: string); virtual;
     function CreateCollection(): TPyDistributionCollection; virtual; abstract;
-    procedure Prepare(); virtual;
+    procedure Prepare(const ACancelation: ICancelation); virtual;
     //IEnvironmentNotifier<TPyCustomEnvironment> delegation
     procedure InternalNotifyAll(ANotification: TEnvironmentNotification;
       ADistribution: TPyDistribution); dynamic;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy(); override;
-
+    /// <summary>
+    ///   Setup an environment.
+    /// </summary>
     procedure Setup(APythonVersion: string = '');
-    function SetupAsync(APythonVersion: string = ''): ITask;
-
+    /// <summary>
+    ///   Activate an environment.
+    /// </summary>
     function Activate(APythonVersion: string = ''): boolean;
+    /// <summary>
+    ///   Deactivate an environment.
+    /// </summary>
     procedure Deactivate();
+
+    function SetupAsync(const APythonVersion: string;
+      const ACallback: TAsyncCallback = nil): IAsyncResult; overload;
+    function SetupAsync(
+      const ACallback: TAsyncCallback = nil): IAsyncResult; overload;
+    function ActivateAsync(const APythonVersion: string;
+      const ASetupAsync: IAsyncResult;
+      const ACallback: TAsyncFuncCallback<boolean> = nil): IAsyncResult; overload;
+    function ActivateAsync(const ASetupAsync: IAsyncResult;
+      const ACallback: TAsyncFuncCallback<boolean> = nil): IAsyncResult; overload;
+    function ActivateAsync(
+      const ACallback: TAsyncFuncCallback<boolean> = nil): IAsyncResult; overload;
+    /// <summary>
+    /// Async begin setup an environment.
+    /// </summary>
+    function BeginSetup(const APythonVersion: string = ''): IAsyncResult;
+    /// <summary>
+    /// Wait for the async setup action to complete.
+    /// </summary>
+    procedure EndSetup(const ASyncResult: IAsyncResult);
+    /// <summary>
+    ///   Queue the activate action to the main thread.
+    /// </summary>
+    function BeginActivate(const APythonVersion: string = ''): IAsyncResult;
+    /// <summary>
+    ///   Wait for the activate action to complete.
+    ///   Never call this routine directly from main thread.
+    /// </summary>
+    function EndActivate(const ASyncResult: IAsyncResult): boolean;
   public
-    property Distributions: TPyDistributionCollection read FDistributions write SetEnvironments;
+    property Distributions: TPyDistributionCollection read FDistributions write SetDistributions;
     property AutoLoad: boolean read FAutoLoad write FAutoLoad;
     property PythonVersion: string read FPythonVersion write SetPythonVersion;
     property PythonEngine: TPythonEngine read FPythonEngine write SetPythonEngine;
@@ -114,6 +194,7 @@ type
     property BeforeDeactivate: TPyEnvironmentBeforeDeactivate read FBeforeDeactivate write FBeforeDeactivate;
     property AfterDeactivate: TPyEnvironmentAfterDeactivate read FAfterDeactivate write FAfterDeactivate;
     property OnReady: TPyEnvironmentReady read FOnReady write FOnReady;
+    property OnError: TPyEnvironmentError read FOnError write FOnError;
   end;
 
   TPyEnvironment = class(TPyCustomEnvironment)
@@ -131,7 +212,8 @@ type
 implementation
 
 uses
-  System.IOUtils, System.StrUtils,
+  System.IOUtils,
+  System.StrUtils,
   TypInfo,
   PyEnvironment.Path;
 
@@ -150,17 +232,6 @@ begin
   inherited;
 end;
 
-procedure TPyCustomEnvironment.Loaded;
-begin
-  inherited;
-  if not (csDesigning in ComponentState)
-    and FAutoLoad
-      and Assigned(FPythonEngine)
-        and not (PythonVersion.IsEmpty) then
-          DoAutoLoad();
-  DoInit();
-end;
-
 procedure TPyCustomEnvironment.Notification(AComponent: TComponent;
   AOperation: TOperation);
 begin
@@ -171,33 +242,128 @@ begin
   end;
 end;
 
-procedure TPyCustomEnvironment.Setup(APythonVersion: string);
+procedure TPyCustomEnvironment.SetDistributions(
+  const ADistributions: TPyDistributionCollection);
 begin
-  InternalSetup(APythonVersion);
+  FDistributions.Assign(ADistributions);
 end;
 
-function TPyCustomEnvironment.SetupAsync(APythonVersion: string): ITask;
+procedure TPyCustomEnvironment.SetPythonEngine(const APythonEngine: TPythonEngine);
 begin
-  Result := TTask.Run(procedure() begin
-    InternalSetup(
-      IfThen(APythonVersion.IsEmpty(), PythonVersion, APythonVersion));
-  end);
+  if (APythonEngine <> FPythonEngine) then begin
+    if Assigned(FPythonEngine) then
+      FPythonEngine.RemoveFreeNotification(Self);
+    FPythonEngine := APythonEngine;
+    if Assigned(FPythonEngine) then begin
+      FPythonEngine.FreeNotification(Self);
+      if (csDesigning in ComponentState) then
+        FPythonEngine.AutoLoad := false
+      else if FAutoLoad and not (PythonVersion.IsEmpty) and (csLoading in ComponentState) then
+        DoAutoLoad();
+    end;
+  end;
+end;
+
+procedure TPyCustomEnvironment.SetPythonVersion(const Value: string);
+begin
+  FPythonVersion := Value;
+end;
+
+procedure TPyCustomEnvironment.Setup(APythonVersion: string);
+begin
+  InternalSetup(APythonVersion, TCancelation.Create());
+end;
+
+function TPyCustomEnvironment.SetupAsync(
+  const ACallback: TAsyncCallback): IAsyncResult;
+begin
+  Result := SetupAsync(PythonVersion, ACallback);
+end;
+
+function TPyCustomEnvironment.SetupAsync(const APythonVersion: string;
+  const ACallback: TAsyncCallback): IAsyncResult;
+var
+  LCancelation: ICancelation;
+begin
+  LCancelation := TCancelation.Create();
+
+  Result := TAsyncSetup.Create(Self,
+    procedure()
+    begin
+      InternalSetup(
+        IfThen(APythonVersion.IsEmpty(), PythonVersion, APythonVersion),
+        LCancelation);
+    end,
+    procedure()
+    begin
+      LCancelation.Cancel();
+    end, ACallback).Invoke();
+end;
+
+function TPyCustomEnvironment.BeginSetup(const APythonVersion: string): IAsyncResult;
+begin
+  Result := SetupAsync(APythonVersion);
+end;
+
+procedure TPyCustomEnvironment.EndSetup(const ASyncResult: IAsyncResult);
+begin
+  (ASyncResult as TBaseAsyncResult).WaitForCompletion();
+end;
+
+function TPyCustomEnvironment.BeginActivate(
+  const APythonVersion: string): IAsyncResult;
+begin
+  Result := ActivateAsync(APythonVersion, nil, nil);
+end;
+
+function TPyCustomEnvironment.EndActivate(
+  const ASyncResult: IAsyncResult): boolean;
+begin
+  Result := TAsyncActivate<boolean>(ASyncResult).GetRetVal();
 end;
 
 function TPyCustomEnvironment.Activate(APythonVersion: string): boolean;
 begin
   Result := InternalActivate(
-    IfThen(APythonVersion.IsEmpty(), PythonVersion, APythonVersion));
+    IfThen(APythonVersion.IsEmpty(), PythonVersion, APythonVersion),
+    TCancelation.Create());
+end;
+
+function TPyCustomEnvironment.ActivateAsync(const APythonVersion: string;
+  const ASetupAsync: IAsyncResult; const ACallback: TAsyncFuncCallback<boolean>): IAsyncResult;
+var
+  LCancelation: ICancelation;
+begin
+  LCancelation := TCancelation.Create();
+
+  Result := TAsyncActivate<boolean>.Create(Self, ASetupAsync,
+    function(): boolean
+    begin
+      Result := InternalActivate(
+        IfThen(APythonVersion.IsEmpty(), PythonVersion, APythonVersion),
+        LCancelation);
+    end,
+    procedure()
+    begin
+      LCancelation.Cancel();
+    end, ACallback).Invoke();
+end;
+
+function TPyCustomEnvironment.ActivateAsync(const ASetupAsync: IAsyncResult;
+  const ACallback: TAsyncFuncCallback<boolean>): IAsyncResult;
+begin
+  Result := ActivateAsync(PythonVersion, ASetupAsync, ACallback);
+end;
+
+function TPyCustomEnvironment.ActivateAsync(
+  const ACallback: TAsyncFuncCallback<boolean>): IAsyncResult;
+begin
+  Result := ActivateAsync(nil, ACallback);
 end;
 
 procedure TPyCustomEnvironment.Deactivate;
 begin
   InternalDeactivate();
-end;
-
-procedure TPyCustomEnvironment.DoInternalReady;
-begin
-  InternalNotifyAll(INTERNAL_READY_NOTIFICATION, nil);
 end;
 
 procedure TPyCustomEnvironment.DoAfterDeactivate;
@@ -248,9 +414,29 @@ begin
   InternalNotifyAll(BEFORE_SETUP_NOTIFICATION, nil);
 end;
 
-procedure TPyCustomEnvironment.DoInit;
+//procedure TPyCustomEnvironment.DoInternalReady;
+//begin
+//  if Assigned(FOnReady) then
+//    FOnReady(Self, FPythonEngine.RegVersion);
+//
+//  InternalNotifyAll(INTERNAL_READY_NOTIFICATION, nil);
+//end;
+
+procedure TPyCustomEnvironment.DoInternalError;
 begin
-  InternalNotifyAll(INIT_NOTIFICATION, nil);
+  try
+    if Assigned(FOnError) then
+      FOnError(Self, Exception(ExceptObject()))
+    else begin
+      try
+        raise Exception(AcquireExceptionObject()) at ExceptAddr();
+      finally
+        ReleaseExceptionObject();
+      end;
+    end;
+  finally
+    InternalNotifyAll(INTERNAL_ERROR_NOTIFICATION, nil);
+  end;
 end;
 
 procedure TPyCustomEnvironment.DoAutoLoad;
@@ -259,49 +445,89 @@ begin
   Activate(FPythonVersion);
 end;
 
-function TPyCustomEnvironment.InternalActivate(APythonVersion: string): boolean;
+procedure TPyCustomEnvironment.InternalSetup(const APythonVersion: string;
+  const ACancelation: ICancelation);
 var
   LDistribution: TPyDistribution;
 begin
-  Result := false;
+  DoBeforeSetup(APythonVersion);
+  try
+    Prepare(ACancelation);
 
+    LDistribution := FDistributions.LocateEnvironment(
+      IfThen(APythonVersion.IsEmpty(), PythonVersion, APythonVersion));
+
+    if not Assigned(LDistribution) then
+      Exit();
+
+    LDistribution.Setup(ACancelation);
+  except
+    on E: Exception do begin
+      DoInternalError();
+      Exit;
+    end;
+  end;
+
+  DoAfterSetup(APythonVersion, LDistribution);
+end;
+
+function TPyCustomEnvironment.InternalActivate(const APythonVersion: string;
+  const ACancelation: ICancelation): boolean;
+var
+  LDistribution: TPyDistribution;
+begin
   DoBeforeActivate(APythonVersion);
 
+  //An engine is required
   if not Assigned(FPythonEngine) then
-    Exit();
+    Exit(false);
 
-  LDistribution := FDistributions.LocateEnvironment(APythonVersion);
+  LDistribution := FDistributions.LocateEnvironment(
+    IfThen(APythonVersion.IsEmpty(), PythonVersion, APythonVersion));
+
   if not Assigned(LDistribution) then
-    Exit();
+    Exit(false);
 
-  FPythonEngine.UseLastKnownVersion := false;
-  FPythonEngine.PythonHome := TPyEnvironmentPath.ResolvePath(LDistribution.Home);
-  FPythonEngine.ProgramName := TPyEnvironmentPath.ResolvePath(LDistribution.Executable);
-  FPythonEngine.DllPath := TPath.GetDirectoryName(TPyEnvironmentPath.ResolvePath(LDistribution.SharedLibrary));
-  FPythonEngine.DllName := TPath.GetFileName(LDistribution.SharedLibrary);
-  FPythonEngine.LoadDll();
+  if not LDistribution.IsAvailable() then
+    Exit(false);
 
-  Result := FPythonEngine.IsHandleValid();
+  try
+    FPythonEngine.UseLastKnownVersion := false;
+    FPythonEngine.PythonHome := TPyEnvironmentPath.ResolvePath(LDistribution.Home);
+    FPythonEngine.ProgramName := TPyEnvironmentPath.ResolvePath(LDistribution.Executable);
+    FPythonEngine.DllPath := TPath.GetDirectoryName(TPyEnvironmentPath.ResolvePath(LDistribution.SharedLibrary));
+    FPythonEngine.DllName := TPath.GetFileName(LDistribution.SharedLibrary);
+    FPythonEngine.LoadDll();
+
+    Result := FPythonEngine.IsHandleValid();
+  except
+    on E: Exception do
+      DoInternalError();
+  end;
 
   DoAfterActivate(APythonVersion, LDistribution, Result);
-
-  DoInternalReady;
 end;
 
 procedure TPyCustomEnvironment.InternalDeactivate;
 begin
-  DoBeforeDeactivate;
+  DoBeforeDeactivate();
 
+  //We need a running engine
   if not Assigned(FPythonEngine) then
     Exit();
 
-  FPythonEngine.UnloadDll();
-  FPythonEngine.PythonHome := String.Empty;
-  FPythonEngine.ProgramName := String.Empty;
-  FPythonEngine.DllPath := String.Empty;
-  FPythonEngine.DllName := String.Empty;
+  try
+    FPythonEngine.UnloadDll();
+    FPythonEngine.PythonHome := String.Empty;
+    FPythonEngine.ProgramName := String.Empty;
+    FPythonEngine.DllPath := String.Empty;
+    FPythonEngine.DllName := String.Empty;
+  except
+    on E: Exception do
+      DoInternalError();
+  end;
 
-  DoAfterDeactivate;
+  DoAfterDeactivate();
 end;
 
 procedure TPyCustomEnvironment.InternalNotifyAll(ANotification: TEnvironmentNotification;
@@ -310,57 +536,10 @@ begin
   FEnvironmentNotifier.NotifyAll(ANotification, ADistribution);
 end;
 
-procedure TPyCustomEnvironment.InternalSetup(APythonVersion: string);
-var
-  LDistribution: TPyDistribution;
+procedure TPyCustomEnvironment.Prepare(const ACancelation: ICancelation);
 begin
-  TThread.Synchronize(nil, procedure() begin
-    DoBeforeSetup(APythonVersion);
-  end);
-
-  Prepare();
-
-  APythonVersion := IfThen(APythonVersion.IsEmpty(), PythonVersion, APythonVersion);
-
-  LDistribution := FDistributions.LocateEnvironment(APythonVersion);
-  if not Assigned(LDistribution) then
-    Exit();
-
-  LDistribution.Setup();
-
-  TThread.Synchronize(nil, procedure() begin
-    DoAfterSetup(APythonVersion, LDistribution);
-  end)
-end;
-
-procedure TPyCustomEnvironment.Prepare;
-begin
-  //
-end;
-
-procedure TPyCustomEnvironment.SetEnvironments(
-  const ADistributions: TPyDistributionCollection);
-begin
-  FDistributions.Assign(ADistributions);
-end;
-
-procedure TPyCustomEnvironment.SetPythonEngine(const APythonEngine: TPythonEngine);
-begin
-  if (APythonEngine <> FPythonEngine) then begin
-    if Assigned(FPythonEngine) then
-      FPythonEngine.RemoveFreeNotification(Self);
-    FPythonEngine := APythonEngine;
-    if Assigned(FPythonEngine) then begin
-      FPythonEngine.FreeNotification(Self);
-      if (csDesigning in ComponentState) then
-        FPythonEngine.AutoLoad := false;
-    end;
-  end;
-end;
-
-procedure TPyCustomEnvironment.SetPythonVersion(const Value: string);
-begin
-  FPythonVersion := Value;
+  if PythonVersion.Trim().IsEmpty() and (Distributions.Count > 0) then
+    PythonVersion := TPyDistribution(Distributions.Items[0]).PythonVersion;
 end;
 
 { TPyEnvironment }
@@ -382,6 +561,92 @@ begin
   inherited GetChildren(Proc, Root);
 //  for I := 0 to ComponentCount - 1 do
 //    Proc(Components[I]);
+end;
+
+{ TPyCustomEnvironment.TEnvironmentTaskAsyncResult }
+
+constructor TPyCustomEnvironment.TEnvironmentTaskAsyncResult.Create(
+  const AContext: TObject; const AAsyncTask: TProc;
+  const ACancelCallback: TProc; AAsyncCallback: TAsyncCallback);
+begin
+  inherited Create(AContext);
+  FAsyncTask := AAsyncTask;
+  FCancelCallback := ACancelCallback;
+  FAsyncCallback := AAsyncCallback;
+  FScheduler := TScheduler.Task;
+end;
+
+procedure TPyCustomEnvironment.TEnvironmentTaskAsyncResult.AsyncDispatch;
+begin
+  FAsyncTask();
+end;
+
+procedure TPyCustomEnvironment.TEnvironmentTaskAsyncResult.Complete;
+begin
+  inherited;
+  if Assigned(FAsyncCallback) then
+    FAsyncCallback(Self as IAsyncResult);
+end;
+
+function TPyCustomEnvironment.TEnvironmentTaskAsyncResult.DoCancel: Boolean;
+begin
+  if Assigned(FCancelCallback) then
+    FCancelCallback();
+
+  Result := true;
+end;
+
+procedure TPyCustomEnvironment.TEnvironmentTaskAsyncResult.Schedule;
+begin
+  case FScheduler of
+    Task: TTask.Run(DoAsyncDispatch);
+    Queue: TThread.Queue(TThread.Current, DoAsyncDispatch);
+    ForceQueue: TThread.ForceQueue(TThread.Current, DoAsyncDispatch);
+  end;
+end;
+
+{ TPyCustomEnvironment.TAsyncActivate<TResult> }
+
+constructor TPyCustomEnvironment.TAsyncActivate<TResult>.Create(
+  const AContext: TObject; const ASetupResult: IAsyncResult;
+  const AAsyncTask: TFunc<TResult>; const ACancelCallback: TProc;
+  AAsyncFuncCallback: TAsyncFuncCallback<TResult>);
+begin
+  inherited Create(AContext,
+    procedure()
+    begin
+      FRetVal := AAsyncTask();
+    end,
+    ACancelCallback,
+    procedure(const AAsyncResult: IAsyncResult)
+    begin
+      if Assigned(AAsyncFuncCallback) then
+        AAsyncFuncCallback(AAsyncResult, FRetVal);
+    end);
+
+  if Assigned(ASetupResult) then
+    Scheduler := TScheduler.Queue
+  else
+    Scheduler := TScheduler.ForceQueue;
+
+  FSetupResult := ASetupResult;
+end;
+
+function TPyCustomEnvironment.TAsyncActivate<TResult>.GetRetVal: TResult;
+begin
+  WaitForCompletion;
+  Result := FRetVal;
+end;
+
+procedure TPyCustomEnvironment.TAsyncActivate<TResult>.Schedule;
+begin
+  if Assigned(FSetupResult) then begin
+    TTask.Run(procedure() begin
+      FSetupResult.AsyncWaitEvent.WaitFor(INFINITE);
+      inherited;
+    end);
+  end else
+    inherited;
 end;
 
 initialization
