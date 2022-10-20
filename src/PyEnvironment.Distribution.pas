@@ -34,6 +34,9 @@ interface
 
 uses
   System.Classes,
+  System.SysUtils,
+  System.SysConst,
+  PyTools.Cancelation,
   PyEnvironment.Notification;
 
 type
@@ -46,7 +49,8 @@ type
   protected
     function GetNotifier<Notifier>(): IEnvironmentNotifier<Notifier>;
   public
-    procedure Setup(); virtual; abstract;
+    procedure Setup(const ACancelation: ICancelation); virtual;
+    function IsAvailable(): boolean; virtual;
   published
     property PythonVersion: string read FPythonVersion write FPythonVersion;
     property Home: string read FHome write FHome;
@@ -64,13 +68,26 @@ type
 implementation
 
 uses
-  System.SysUtils;
+  System.IOUtils;
 
 { TPyDistribution }
 
 function TPyDistribution.GetNotifier<Notifier>: IEnvironmentNotifier<Notifier>;
 begin
   Result := (Collection as TPyDistributionCollection).GetNotifier<Notifier>;
+end;
+
+function TPyDistribution.IsAvailable: boolean;
+begin
+  Result := not FPythonVersion.IsEmpty()
+    and TDirectory.Exists(FHome)
+    and TFile.Exists(FSharedLibrary)
+    and TFile.Exists(FExecutable)
+end;
+
+procedure TPyDistribution.Setup(const ACancelation: ICancelation);
+begin
+  ACancelation.CheckCanceled();
 end;
 
 { TPyDistributionCollection }

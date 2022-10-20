@@ -33,8 +33,12 @@ unit PyEnvironment.Local;
 interface
 
 uses
-  System.Classes, System.SysUtils, System.JSON,
-  PyEnvironment, PyEnvironment.Distribution;
+  System.Classes,
+  System.SysUtils,
+  System.JSON,
+  PyTools.Cancelation,
+  PyEnvironment,
+  PyEnvironment.Distribution;
 
 type
   (*-----------------------------------------------------------------------*)
@@ -49,7 +53,7 @@ type
   (*-----------------------------------------------------------------------*)
   TPyLocalDistribution = class(TPyDistribution)
   public
-    procedure Setup(); override;
+    procedure Setup(const ACancelation: ICancelation); override;
   end;
 
   TPyLocalCollection = class(TPyDistributionCollection);
@@ -61,7 +65,7 @@ type
     procedure EnumerateEnvironments(const AProc: TProc<string, TJSONObject>);
   protected
     function CreateCollection(): TPyDistributionCollection; override;
-    procedure Prepare(); override;
+    procedure Prepare(const ACancelation: ICancelation); override;
   published
     property Distributions;
     property FilePath: string read FFilePath write FFilePath;
@@ -72,11 +76,13 @@ type
 implementation
 
 uses
-  System.IOUtils, PythonEngine, PyEnvironment.Path;
+  System.IOUtils,
+  PythonEngine,
+  PyEnvironment.Path;
 
 { TPyLocalDistribution }
 
-procedure TPyLocalDistribution.Setup;
+procedure TPyLocalDistribution.Setup(const ACancelation: ICancelation);
 begin
   inherited;
 end;
@@ -123,7 +129,7 @@ begin
   end;
 end;
 
-procedure TPyLocalEnvironment.Prepare;
+procedure TPyLocalEnvironment.Prepare(const ACancelation: ICancelation);
 var
   LFilePath: string;
 begin
@@ -136,6 +142,8 @@ begin
     var
       LDistribution: TPyLocalDistribution;
     begin
+      ACancelation.CheckCanceled();
+
       LDistribution := TPyLocalDistribution(Distributions.Add());
       LDistribution.PythonVersion := APythonVersion;
       LDistribution.Home := AEnvironmentInfo.GetValue<string>('home');
