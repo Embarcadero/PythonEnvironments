@@ -35,34 +35,81 @@ interface
 type
   TPyEnvironmentPath = class
   public const
-    DEPLOY_PATH = '$(DEPLOY_PATH)';
+    ENVIRONMENT_PATH = '$(ROOT_PATH)';
+    EMBEDDABLES_PATH = '$(EMBEDDABLES_PATH)';
+    PYTHON_VER = '$(PYTHON_VER)';
   public
+    class function CreateEmbeddablesPath(const APythonVer: boolean = false): string;
+    class function CreateEnvironmentPath(const APythonVer: boolean = true): string;
     /// <summary>
     /// This function might resolve path variables, relative paths and whatever regarding paths
     /// </summary>
-    class function ResolvePath(const APath: string): string; static;
+    class function ResolvePath(const APath: string): string; overload; static;
+    class function ResolvePath(const APath, APythonVersion: string): string; overload; static;
   end;
 
 implementation
 
 uses
-  System.IOUtils, System.SysUtils;
+  System.IOUtils, System.SysUtils, System.RegularExpressions;
 
 { TPyEnvironmentPath }
 
-class function TPyEnvironmentPath.ResolvePath(const APath: string): string;
+class function TPyEnvironmentPath.CreateEmbeddablesPath(
+  const APythonVer: boolean): string;
 begin
-  if (APath <> ExpandFileName(APath)) or (APath = DEPLOY_PATH) then begin
+  Result := EMBEDDABLES_PATH;
+  if APythonVer then
+    Result := TPath.Combine(Result, PYTHON_VER);
+end;
+
+class function TPyEnvironmentPath.CreateEnvironmentPath(
+  const APythonVer: boolean): string;
+begin
+  Result := ENVIRONMENT_PATH;
+  if APythonVer then
+    Result := TPath.Combine(Result, PYTHON_VER);
+end;
+
+class function TPyEnvironmentPath.ResolvePath(const APath: string): string;
+
+  function GetRootPath(): string;
+  begin
     {$IFDEF ANDROID}
     Result := TPath.GetDocumentsPath();
     {$ELSE}
     Result := TPath.GetDirectoryName(GetModuleName(HInstance));
     {$ENDIF}
+  end;
 
-    if (APath <> DEPLOY_PATH) then
-      Result := TPath.Combine(Result, APath);
-  end else
-    Result := APath;
+begin
+  //Fix \ or / as dir separator. It varies in different platforms
+  Result := TRegEx.Replace(APath, '[\/]', TPath.DirectorySeparatorChar);
+  //Replace the DEPLOY_PATH variable with the app root path
+  Result := Result.Replace(ENVIRONMENT_PATH, GetRootPath());
+  //Replace the EMBEDDABLES_PATH variable with the platform specific path
+  {$IFDEF ANDROID}
+  Result := Result.Replace(EMBEDDABLES_PATH, TPath.GetDocumentsPath());
+  {$ELSEIF DEFINED(MACOS)}
+  Result := Result.Replace(
+    EMBEDDABLES_PATH,
+    TPath.Combine(
+      TDirectory.GetParent(TPath.GetDirectoryName(GetModuleName(HInstance))),
+      'Resources'));
+  {$ELSE}
+  Result := Result.Replace(EMBEDDABLES_PATH, GetRootPath());
+  {$ENDIF}
+
+  //Relative path, maybe!?
+  if (Result <> ExpandFileName(Result)) then
+    Result := TPath.Combine(GetRootPath(), Result);
+end;
+
+class function TPyEnvironmentPath.ResolvePath(const APath,
+  APythonVersion: string): string;
+begin
+  Result := APath.Replace(PYTHON_VER, APythonVersion);
+  Result := ResolvePath(Result);
 end;
 
 end.
