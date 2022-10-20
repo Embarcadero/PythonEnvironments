@@ -70,7 +70,7 @@ begin
     TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Android64, 'python\android\3.7.15\arm64\python3.7m',       'library\lib\arm64-v8a\',   False, True, TDeployOperation.doSetExecBit, ''), // Android64
     TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Android64, 'python\android\3.7.15\arm\python3.7m',         'library\lib\armeabi-v7a\', False, True, TDeployOperation.doSetExecBit, '''$(AndroidAppBundle)''==''true'''), // Android64
     //MacOS
-    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.OSX64,     'python\python3-macos-3.7.15-x86_64.zip',       'Contents\MacOS\',          True,  True, TDeployOperation.doCopyOnly,   ''), // OSX64
+    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.OSX64,     'python\python3-macos-3.7.15-x86_64.zip',       'Contents\Resources\',      True,  True, TDeployOperation.doCopyOnly,   ''), // OSX64
     TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.OSX64,     'python\macos\3.7.15\intel\libpython3.7m.dylib','Contents\MacOS\',          True,  True, TDeployOperation.doSetExecBit, ''), // OSX64
     TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.OSX64,     'python\macos\3.7.15\intel\python3.7m',         'Contents\MacOS\',          True,  True, TDeployOperation.doSetExecBit, ''), // OSX64
     //TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.OSXARM64,  'python\python3-macos-3.7.13-universal2.zip',   'Contents\MacOS\',          True,  True, TDeployOperation.doCopyOnly,  ''), // OSXARM64 //3.7 is not available for M1
@@ -93,8 +93,8 @@ begin
     TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Android64, 'python\android\3.8.15\arm64\python3.8',       'library\lib\arm64-v8a\',    False, True, TDeployOperation.doSetExecBit, ''), // Android64
     TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Android64, 'python\android\3.8.15\arm\python3.8',         'library\lib\armeabi-v7a\',  False, True, TDeployOperation.doSetExecBit, '''$(AndroidAppBundle)''==''true'''), // Android64
     //MacOS
-    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.OSX64,     'python\python3-macos-3.8.15-x86_64.zip',      'Contents\MacOS\',           True,  True, TDeployOperation.doCopyOnly,   ''), // OSX64
-    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.OSXARM64,  'python\python3-macos-3.8.15-universal2.zip',  'Contents\MacOS\',           True,  True, TDeployOperation.doCopyOnly,   ''), // OSXARM64
+    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.OSX64,     'python\python3-macos-3.8.15-x86_64.zip',      'Contents\Resources\',       True,  True, TDeployOperation.doCopyOnly,   ''), // OSX64
+    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.OSXARM64,  'python\python3-macos-3.8.15-universal2.zip',  'Contents\Resources\',       True,  True, TDeployOperation.doCopyOnly,   ''), // OSXARM64
     TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.OSX64,     'python\macos\3.8.15\intel\libpython3.8.dylib','Contents\MacOS\',           True,  True, TDeployOperation.doSetExecBit, ''), // OSX64
     TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.OSX64,     'python\macos\3.8.15\intel\python3.8',         'Contents\MacOS\',           True,  True, TDeployOperation.doSetExecBit, ''), // OSX64
     TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.OSXARM64,  'python\macos\3.8.15\arm\libpython3.8.dylib',  'Contents\MacOS\',           True,  True, TDeployOperation.doSetExecBit, ''), // OSXARM64
@@ -118,8 +118,8 @@ begin
     TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Android64, 'python\android\3.9.15\arm64\python3.9',       'library\lib\arm64-v8a\',    False, True, TDeployOperation.doSetExecBit, ''), // Android64
     TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Android64, 'python\android\3.9.15\arm\python3.9',         'library\lib\armeabi-v7a\',  False, True, TDeployOperation.doSetExecBit, '''$(AndroidAppBundle)''==''true'''), // Android64
     //MacOS
-    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.OSX64,     'python\python3-macos-3.9.15-x86_64.zip',      'Contents\MacOS\',           True,  True, TDeployOperation.doCopyOnly,   ''), // OSX64
-    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.OSXARM64,  'python\python3-macos-3.9.15-universal2.zip',  'Contents\MacOS\',           True,  True, TDeployOperation.doCopyOnly,   ''), // OSXARM64
+    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.OSX64,     'python\python3-macos-3.9.15-x86_64.zip',      'Contents\Resources\',       True,  True, TDeployOperation.doCopyOnly,   ''), // OSX64
+    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.OSXARM64,  'python\python3-macos-3.9.15-universal2.zip',  'Contents\Resources\',       True,  True, TDeployOperation.doCopyOnly,   ''), // OSXARM64
     TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.OSX64,     'python\macos\3.9.15\intel\libpython3.9.dylib','Contents\MacOS\',           True,  True, TDeployOperation.doSetExecBit, ''), // OSX64
     TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.OSX64,     'python\macos\3.9.15\intel\python3.9',         'Contents\MacOS\',           True,  True, TDeployOperation.doSetExecBit, ''), // OSX64
     TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.OSXARM64,  'python\macos\3.9.15\arm\libpython3.9.dylib',  'Contents\MacOS\',           True,  True, TDeployOperation.doSetExecBit, ''), // OSXARM64
@@ -143,8 +143,8 @@ begin
     TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Android64, 'python\android\3.10.8\arm64\python3.10',       'library\lib\arm64-v8a\',    False, True, TDeployOperation.doSetExecBit, ''), // Android64
     TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Android64, 'python\android\3.10.8\arm\python3.10',         'library\lib\armeabi-v7a\',  False, True, TDeployOperation.doSetExecBit, '''$(AndroidAppBundle)''==''true'''), // Android64
     //MacOS
-    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.OSX64,     'python\python3-macos-3.10.8-x86_64.zip',       'Contents\MacOS\',           True,  True, TDeployOperation.doCopyOnly,   ''), // OSX64
-    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.OSXARM64,  'python\python3-macos-3.10.8-universal2.zip',   'Contents\MacOS\',           True,  True, TDeployOperation.doCopyOnly,   ''), // OSXARM64
+    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.OSX64,     'python\python3-macos-3.10.8-x86_64.zip',       'Contents\Resources\',       True,  True, TDeployOperation.doCopyOnly,   ''), // OSX64
+    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.OSXARM64,  'python\python3-macos-3.10.8-universal2.zip',   'Contents\Resources\',       True,  True, TDeployOperation.doCopyOnly,   ''), // OSXARM64
     TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.OSX64,     'python\macos\3.10.8\intel\libpython3.10.dylib','Contents\MacOS\',           True,  True, TDeployOperation.doSetExecBit, ''), // OSX64
     TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.OSX64,     'python\macos\3.10.8\intel\python3.10',         'Contents\MacOS\',           True,  True, TDeployOperation.doSetExecBit, ''), // OSX64
     TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.OSXARM64,  'python\macos\3.10.8\arm\libpython3.10.dylib',  'Contents\MacOS\',           True,  True, TDeployOperation.doSetExecBit, ''), // OSXARM64
