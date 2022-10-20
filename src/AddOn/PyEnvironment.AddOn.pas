@@ -40,7 +40,6 @@ uses
 
 type
   TPyEnvironmentCustomAddOn = class;
-//  TPyEnvironmentAddOns = class;
 
   TPyEnvironmentaddOnTrigger = (
     trBeforeSetup, trAfterSetup,
@@ -52,22 +51,16 @@ type
     const ATrigger: TPyEnvironmentaddOnTrigger;
     const ADistribution: TPyDistribution) of object;
 
-//  TPyEnvironmentAddOnExecuteError = procedure(ADistribution: TPyDistribution;
-//    const AAddOn: TPyEnvironmentCustomAddOn;
-//    AException: Exception) of object;
-
   TPyEnvironmentAddOnExecuteError = procedure(const ASender: TObject;
     const ADistribution: TPyDistribution; const AException: Exception) of object;
 
   TPyEnvironmentCustomAddOn = class(TComponent, IEnvironmentNotified<TPyCustomEnvironment>)
   private
-//    FAddOns: TPyEnvironmentAddOns;
     FEnvironment: TPyCustomEnvironment;
     FOnExecute: TPyEnvironmentAddOnExecute;
     FTriggers: TPyEnvironmentaddOnTriggers;
     FOnExecuteError: TPyEnvironmentAddOnExecuteError;
     procedure SetEnvironment(const Value: TPyCustomEnvironment);
-//    procedure SetAddOns(const Value: TPyEnvironmentAddOns);
     //IEnvironmentNotified implementation
     procedure NotifyUpdate(const ANotifier: TPyCustomEnvironment;
       const ANotification: TEnvironmentNotification;
@@ -81,14 +74,11 @@ type
     function GetTriggerFromNotification(const ANotification: TEnvironmentNotification;
       out ATrigger: TPyEnvironmentaddOnTrigger): boolean; overload;
     function CanExecute(ATrigger: TPyEnvironmentaddOnTrigger): boolean; overload;
-
-
     procedure InternalExecute(const ATriggeredBy: TPyEnvironmentaddOnTrigger;
       const ADistribution: TPyDistribution); virtual; abstract;
   public
     procedure Execute(const ATrigger: TPyEnvironmentaddOnTrigger; const ADistribution: TPyDistribution);
   published
-//    property AddOns: TPyEnvironmentAddOns read FAddOns write SetAddOns;
     property Environment: TPyCustomEnvironment read FEnvironment write SetEnvironment;
     property Triggers: TPyEnvironmentaddOnTriggers read FTriggers write SetTriggers;
     property OnExecute: TPyEnvironmentAddOnExecute read FOnExecute write FOnExecute;
