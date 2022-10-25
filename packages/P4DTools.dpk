@@ -36,6 +36,12 @@ contains
   PyTools.ExecCmd in '..\src\Tools\PyTools.ExecCmd.pas',
   PyTools.ExecCmd.Args in '..\src\Tools\PyTools.ExecCmd.Args.pas',
   PyTools.ExecCmd.Platform in '..\src\Tools\PyTools.ExecCmd.Platform.pas',
-  PyTools.Cancelation in '..\src\Tools\PyTools.Cancelation.pas';
+  PyTools.Cancelation in '..\src\Tools\PyTools.Cancelation.pas',
+  PyTools.Notification in '..\src\Tools\Notification\PyTools.Notification.pas',
+  PyTools.Notification.Channel in '..\src\Tools\Notification\PyTools.Notification.Channel.pas',
+  PyTools.Notification.Identifier in '..\src\Tools\Notification\PyTools.Notification.Identifier.pas',
+  PyTools.Notification.Content in '..\src\Tools\Notification\PyTools.Notification.Content.pas',
+  PyTools.Notification.Protocol in '..\src\Tools\Notification\Protocol\PyTools.Notification.Protocol.pas',
+  PyTools.Notification.Protocol.Local in '..\src\Tools\Notification\Protocol\PyTools.Notification.Protocol.Local.pas';
 
 end.
