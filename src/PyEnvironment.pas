@@ -1,12 +1,13 @@
 (**************************************************************************)
 (*                                                                        *)
-(* Module:  Unit 'PyEnvironment'   Copyright (c) 2021                     *)
+(* Module:  Unit 'PyEnvironment'                                          *)
 (*                                                                        *)
+(*                                  Copyright (c) 2021                    *)
 (*                                  Lucas Moura Belo - lmbelo             *)
 (*                                  lucas.belo@live.com                   *)
 (*                                  Brazil                                *)
 (*                                                                        *)
-(* Project page:                    https://github.com/lmbelo/P4D_AI_ML   *)
+(* Project page:         https://github.com/Embarcadero/PythonEnviroments *)
 (**************************************************************************)
 (*  Functionality:  PyEnvironment  layer                                  *)
 (*                                                                        *)
@@ -74,7 +75,8 @@ type
 
       property Scheduler: TScheduler read FScheduler write FScheduler;
     end;
-    TAsyncFuncCallback<TResult> = reference to procedure (const ASyncResult: IAsyncResult; const AResult: TResult);
+    TAsyncFuncCallback<TResult> = reference to procedure (
+      const ASyncResult: IAsyncResult; const AResult: TResult);
     TAsyncSetup = class sealed(TEnvironmentTaskAsyncResult);
     TAsyncActivate<TResult> = class sealed(TEnvironmentTaskAsyncResult)
     private
@@ -116,7 +118,8 @@ type
     procedure DoBeforeSetup(APythonVersion: string);
     procedure DoAfterSetup(APythonVersion: string; const ADistribution: TPyDistribution);
     procedure DoBeforeActivate(APythonVersion: string);
-    procedure DoAfterActivate(APythonVersion: string; const ADistribution: TPyDistribution; var Result: Boolean);
+    procedure DoAfterActivate(
+      APythonVersion: string; const ADistribution: TPyDistribution; var Result: Boolean);
     procedure DoBeforeDeactivate;
     procedure DoAfterDeactivate;
     /// <summary>
@@ -382,7 +385,8 @@ begin
   InternalNotifyAll(BEFORE_DEACTIVATE_NOTIFICATION, nil);
 end;
 
-procedure TPyCustomEnvironment.DoAfterActivate(APythonVersion: string; const ADistribution: TPyDistribution; var Result: Boolean);
+procedure TPyCustomEnvironment.DoAfterActivate(APythonVersion: string;
+  const ADistribution: TPyDistribution; var Result: Boolean);
 begin
   if Assigned(FAfterActivate) then
     FAfterActivate(Self, APythonVersion, Result);
@@ -398,7 +402,8 @@ begin
   InternalNotifyAll(BEFORE_ACTIVATE_NOTIFICATION, nil);
 end;
 
-procedure TPyCustomEnvironment.DoAfterSetup(APythonVersion: string; const ADistribution: TPyDistribution);
+procedure TPyCustomEnvironment.DoAfterSetup(APythonVersion: string;
+  const ADistribution: TPyDistribution);
 begin
   if Assigned(FAfterSetup) then
     FAfterSetup(Self, APythonVersion);
