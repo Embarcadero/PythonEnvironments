@@ -7,7 +7,7 @@
 (*                                  lucas.belo@live.com                   *)
 (*                                  Brazil                                *)
 (*                                                                        *)
-(* Project page:             https://github.com/Embarcadero/python4delphi *)
+(* Project page:         https://github.com/Embarcadero/PythonEnviroments *)
 (**************************************************************************)
 (*  Functionality:  Supplier for Execute Commands                         *)
 (*                                                                        *)
