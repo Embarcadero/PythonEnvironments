@@ -35,6 +35,7 @@ unit PyTools.ExecCmd.Posix;
 interface
 
 uses
+  System.SysUtils,
   Posix.Base, Posix.Fcntl, Posix.Unistd, Posix.SysWait, Posix.Stdlib,
   Posix.Stdio, Posix.SysTypes, Posix.Signal, Posix.Errno, Posix.SysStat,
   Posix.String_,
@@ -66,6 +67,7 @@ type
     function Run(out AReader: TReader; out AWriter: TWriter; const ARedirections: TRedirections): IExecCmd; overload;
     procedure Kill();
     function Wait(): Integer;
+    function SpinWait(const ACondition: TFunc<boolean>; const ATimeOut: cardinal): Integer;
 
     property IsAlive: boolean read GetIsAlive;
     property ExitCode: Integer read GetExitCode;
@@ -81,7 +83,8 @@ type
 implementation
 
 uses
-  System.SysUtils, System.IOUtils;
+  System.IOUtils,
+  System.SyncObjs;
 
 type
   TReader = PyTools.ExecCmd.TReader;
@@ -113,7 +116,7 @@ end;
 
 function TExecCmd.GetExitCode: Integer;
 begin
-  Result := Wait();
+  Result := FExitCode;
 end;
 
 function TExecCmd.GetIsAlive: boolean;
@@ -285,33 +288,34 @@ begin
 end;
 
 function TExecCmd.Wait: Integer;
-var
-  LWaitedPid: integer;
-  LStatus: integer;
 begin
-  if (FExitCode <> INITIAL_EXIT_CODE) then
-    Exit(FExitCode);
-    
-  LWaitedPid := waitpid(FPid, @LStatus, WNOHANG);
-  repeat
-    if (LWaitedPid = -1) then
-      raise EWaitFailed.Create('Failed waiting for process.')
-    else if (LWaitedPid = 0) then
-      LWaitedPid := waitpid(FPid, @LStatus, WNOHANG)
-    else begin
-      if WIFEXITED(LStatus) then begin
-        FExitCode := WEXITSTATUS(LStatus);
-      end else if WIFSIGNALED(LStatus) then begin
-        FExitCode := WTERMSIG(LStatus);
-      end else if WIFSTOPPED(LStatus) then begin
-        FExitCode := WSTOPSIG(LStatus);
-      end else begin
-        FExitCode := EXIT_FAILURE;
-      end;
-    end;
-  until (FExitCode <> INITIAL_EXIT_CODE);
-  
-  Result := FExitCode;
+  Result := SpinWait(function(): boolean begin
+    Result := false;
+  end, INFINITE);
+end;
+
+function TExecCmd.SpinWait(const ACondition: TFunc<boolean>;
+  const ATimeOut: cardinal): Integer;
+var
+  LConditionHit: boolean;
+begin
+  TSpinWait.SpinUntil(function(): boolean begin
+    LConditionHit := false;
+
+    Result := not GetIsAlive();
+
+    if Result then
+      Exit(true);
+
+    LConditionHit := ACondition();
+
+    Result := LConditionHit;
+  end, ATimeout);
+
+  if LConditionHit then
+    Result := EXIT_FAILURE
+  else
+    Result := GetExitCode();
 end;
 
 end.

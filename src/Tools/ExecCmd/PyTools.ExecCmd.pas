@@ -51,6 +51,7 @@ type
     function Run(out AReader: TReader; out AWriter: TWriter; const ARedirections: TRedirections): IExecCmd; overload;
     procedure Kill();
     function Wait(): Integer;
+    function SpinWait(const ACondition: TFunc<boolean>; const ATimeOut: cardinal = INFINITE): Integer;
 
     property IsAlive: boolean read GetIsAlive;
     property ExitCode: Integer read GetExitCode;
