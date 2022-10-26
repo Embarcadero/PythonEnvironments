@@ -83,7 +83,7 @@ type
   protected
     function GetEnvironmentPath(): string;
   public
-    procedure Setup(const ACancelation: ICancelation); override;
+    function Setup(const ACancelation: ICancelation): boolean; override;
   public
     property EmbeddablePackage: string read FEmbeddablePackage write FEmbeddablePackage;
   published
@@ -99,7 +99,7 @@ type
   protected
     procedure LoadSettings(const ACancelation: ICancelation); override;
   public
-    procedure Setup(const ACancelation: ICancelation); override;
+    function Setup(const ACancelation: ICancelation): boolean; override;
     property Scanned: boolean read FScanned write FScanned;
   published
     property EmbeddablePackage;
@@ -132,7 +132,6 @@ type
       FEnvironmentPath: string;
       FDeleteEmbeddable: boolean;
     public
-      constructor Create();
       procedure Scan(const AEmbedabblesPath: string; ACallback: TProc<TPythonVersionProp, string>);
     published
       property AutoScan: boolean read FAutoScan write FAutoScan default false;
@@ -166,10 +165,11 @@ type
 implementation
 
 uses
-  System.IOUtils, System.Character, System.StrUtils,
+  System.IOUtils,
+  System.Character,
+  System.StrUtils,
   PyEnvironment.Path,
   PyTools.ExecCmd,
-  PyEnvironment.Notification,
   PyEnvironment.Project
   {$IFDEF POSIX}
   , Posix.SysStat, Posix.Stdlib, Posix.String_, Posix.Errno
@@ -195,8 +195,6 @@ var
   LProgress: TZipEventToAnonMethodAdapter.TAdapter;
 begin
   //Unzip the embeddable package into the target directory.
-  GetNotifier<TPyCustomEnvironment>.NotifyAll(BEFORE_UNZIP_NOTIFICATION, Self);
-
   LProgress := procedure(Sender: TObject; FileName: string; Header: TZipHeader; Position: Int64)
     begin
       ACancelation.CheckCanceled();
@@ -209,8 +207,6 @@ begin
   finally
     LAdapter.Free();
   end;
-
-  GetNotifier<TPyCustomEnvironment>.NotifyAll(AFTER_UNZIP_NOTIFICATION, Self);
 end;
 
 procedure TPyCustomEmbeddableDistribution.DoZipProgressEvt(Sender: TObject; FileName: string;
@@ -343,7 +339,7 @@ begin
   LPath := TPath.Combine(GetEnvironmentPath(), 'lib');
   {$ELSEIF DEFINED(MACOS)}
   //Let's try it in the library path first
-  LPath := TPyEnvironmentPath.ResolvePath(TPyEnvironmentPath.ROOT_PATH);
+  LPath := TPyEnvironmentPath.ResolvePath(TPyEnvironmentPath.ENVIRONMENT_PATH);
   LFiles := DoSearch(LLibName, LPath);
   if LFiles <> nil then
     Exit(LFiles[Low(LFiles)]);
@@ -380,7 +376,7 @@ begin
   Result := TPyEnvironmentPath.ResolvePath(EnvironmentPath, PythonVersion);
 end;
 
-procedure TPyCustomEmbeddableDistribution.Setup(const ACancelation: ICancelation);
+function TPyCustomEmbeddableDistribution.Setup(const ACancelation: ICancelation): boolean;
 begin
   inherited;
   if not EnvironmentExists() then begin
@@ -388,12 +384,12 @@ begin
       raise EEmbeddableNotFound.CreateFmt(
         'Embeddable package not found.' + #13#10 + '%s', [FEmbeddablePackage]);
 
-    GetNotifier<TPyCustomEnvironment>.NotifyAll(BEFORE_CREATE_ENVIRONMENT_NOTIFICATION, Self);
     CreateEnvironment(ACancelation);
-    GetNotifier<TPyCustomEnvironment>.NotifyAll(AFTER_CREATE_ENVIRONMENT_NOTIFICATION, Self);
   end;
 
   LoadSettings(ACancelation);
+
+  Result := true;
 end;
 
 { TPyEmbeddableDistribution }
@@ -409,9 +405,9 @@ begin
     inherited;
 end;
 
-procedure TPyEmbeddableDistribution.Setup(const ACancelation: ICancelation);
+function TPyEmbeddableDistribution.Setup(const ACancelation: ICancelation): boolean;
 begin
-  inherited;
+  Result := inherited;
   if FDeleteEmbeddable and EmbeddableExists() then
     DoDeleteEmbeddable();
 end;
@@ -422,8 +418,19 @@ constructor TPyEmbeddedEnvironment.Create(AOwner: TComponent);
 begin
   inherited;
   FScanner := TScanner.Create();
-  PythonVersion := PythonProject.PythonVersion;
-  FScanner.ScanRule := TScanRule.srFolder;
+
+  if not (csDesigning in ComponentState) then begin
+    FScanner.EnvironmentPath := TPyEnvironmentPath.CreateEnvironmentPath();
+    FScanner.EmbeddablesPath := TPyEnvironmentPath.CreateEmbeddablesPath();
+  end;
+
+  if PythonProject.Enabled then begin
+    PythonVersion := PythonProject.PythonVersion;
+    FScanner.AutoScan := true;
+    FScanner.DeleteEmbeddable := true;
+    FScanner.ScanRule := TScanRule.srFileName;
+  end else
+    FScanner.ScanRule := TScanRule.srFolder;
 end;
 
 destructor TPyEmbeddedEnvironment.Destroy;
@@ -461,8 +468,6 @@ begin
     FScanner.Scan(
       TPyEnvironmentPath.ResolvePath(FScanner.EmbeddablesPath),
       procedure(APyVersionInfo: TPythonVersionProp; AEmbeddablePackage: string) begin
-        ACancelation.CheckCanceled();
-
         if Assigned(Distributions.LocateEnvironment(APyVersionInfo.RegVersion)) then
           Exit;
 
@@ -486,17 +491,6 @@ begin
 end;
 
 { TPyEmbeddedEnvironment.TScanner }
-
-constructor TPyEmbeddedEnvironment.TScanner.Create;
-begin
-  inherited;
-  FEnvironmentPath := TPyEnvironmentPath.CreateEnvironmentPath();
-  FEmbeddablesPath := TPyEnvironmentPath.CreateEmbeddablesPath();
-  if PythonProject.Enabled then begin
-    ScanRule := TScanRule.srFileName;
-    DeleteEmbeddable := true;
-  end;
-end;
 
 procedure TPyEmbeddedEnvironment.TScanner.Scan(const AEmbedabblesPath: string;
   ACallback: TProc<TPythonVersionProp, string>);

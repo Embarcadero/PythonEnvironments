@@ -33,16 +33,20 @@ unit PyEnvironment.AddOn.GetPip;
 interface
 
 uses
-  System.SysUtils, System.Classes,
-  PyEnvironment.Distribution, PyEnvironment.Notification, PyEnvironment.AddOn;
+  System.SysUtils,
+  System.Classes,
+  PyTools.Cancelation,
+  PyEnvironment,
+  PyEnvironment.AddOn;
 
 type
   [ComponentPlatforms(pidAllPlatforms)]
   TPyEnvironmentAddOnGetPip = class(TPyEnvironmentCustomAddOn)
   protected
+    function GetInfo(): TPyPluginInfo; override;
+    function IsInstalled(): boolean; override;
     procedure SetTriggers(const Value: TPyEnvironmentaddOnTriggers); override;
-    procedure InternalExecute(const ATriggeredBy: TPyEnvironmentaddOnTrigger;
-      const ADistribution: TPyDistribution); override;
+    procedure InternalExecute(const ACancelation: ICancelation); override;
   public
     constructor Create(AOwner: TComponent); override;
   published
@@ -54,9 +58,11 @@ type
 implementation
 
 uses
-  System.Types, System.IOUtils, System.Variants,
-  VarPyth,
-  PyTools.ExecCmd, PyTools.ExecCmd.Args;
+  System.Types,
+  System.IOUtils,
+  PythonEngine,
+  PyTools.ExecCmd,
+  PyTools.ExecCmd.Args;
 
 {$R ..\..\resources\getpipscript.res}
 
@@ -74,32 +80,65 @@ begin
   inherited;
 end;
 
-procedure TPyEnvironmentAddOnGetPip.InternalExecute(
-  const ATriggeredBy: TPyEnvironmentaddOnTrigger;
-  const ADistribution: TPyDistribution);
+function TPyEnvironmentAddOnGetPip.GetInfo: TPyPluginInfo;
+begin
+  Result.Name := 'get-pip.py';
+  Result.Description :=
+    'Python script that uses some bootstrapping logic to install pip.'
+    + sLineBreak
+    + 'See more: https://pip.pypa.io/en/stable/installation/#get-pip-py';
+  Result.InstallsWhen := [TPyPluginEvent.AfterActivate];
+end;
+
+function TPyEnvironmentAddOnGetPip.IsInstalled: boolean;
 var
+  LPythonHome: string;
+  LExecutable: string;
+  LSharedLibrary: string;
+  LCmd: IExecCmd;
+begin
+  LPythonHome := GetPythonEngine().PythonHome;
+  LExecutable := GetPythonEngine().ProgramName;
+  LSharedLibrary := TPath.Combine(GetPythonEngine().DllPath,
+    GetPythonEngine().DllName);
+
+  // Check if pip is installed
+  LCmd := TExecCmdService.Cmd(
+    LExecutable,
+    TExecCmdArgs.BuildArgv(
+      LExecutable, ['-m', 'pip', '--version']),
+    TExecCmdArgs.BuildEnvp(
+      LPythonHome,
+      LExecutable,
+      LSharedLibrary)
+    ).Run();
+
+  Result := (LCmd.Wait() = EXIT_SUCCESS);
+end;
+
+procedure TPyEnvironmentAddOnGetPip.InternalExecute(
+  const ACancelation: ICancelation);
+var
+  LPythonHome: string;
+  LExecutable: string;
+  LSharedLibrary: string;
   LResStream: TResourceStream;
   LFileName: string;
   LPths: TArray<string>;
   LStrings: TStringList;
   I: Integer;
-  LOut: string;
+  LOutput: string;
+  LCmd: IExecCmd;
+  LExitCode: Integer;
 begin
   inherited;
+  LPythonHome := GetPythonEngine().PythonHome;
+  LExecutable := GetPythonEngine().ProgramName;
+  LSharedLibrary := TPath.Combine(GetPythonEngine().DllPath,
+    GetPythonEngine().DllName);
 
-  if (TExecCmdService.Cmd(ADistribution.Executable,
-        TExecCmdArgs.BuildArgv(
-          ADistribution.Executable, ['-m', 'pip', '--version']),
-        TExecCmdArgs.BuildEnvp(
-          ADistribution.Home,
-          ADistribution.Executable,
-          ADistribution.SharedLibrary)
-      ).Run().Wait() = EXIT_SUCCESS) then
-        Exit;
-
-  //Patch the _pth file to work with site packages
   LPths := TDirectory.GetFiles(
-    ADistribution.Home, 'python*._pth', TSearchOption.soTopDirectoryOnly);
+    LPythonHome, 'python*._pth', TSearchOption.soTopDirectoryOnly);
   if (Length(LPths) > 0) then begin
     LStrings := TStringList.Create();
     try
@@ -113,21 +152,31 @@ begin
     end;
   end;
 
+  ACancelation.CheckCanceled();
+
   //Run the get-pip.py script to enabled PIP
   LFileName := TPath.GetTempFileName();
   LResStream := TResourceStream.Create(HInstance, 'getpippy', RT_RCDATA);
   try
     LResStream.SaveToFile(LFileName);
-    if TExecCmdService.Cmd(ADistribution.Executable,
-         TExecCmdArgs.BuildArgv(
-           ADistribution.Executable, [LFileName]),
-         TExecCmdArgs.BuildEnvp(
-           ADistribution.Home,
-           ADistribution.Executable,
-           ADistribution.SharedLibrary))
-       .Run(LOut)
-         .Wait() <> EXIT_SUCCESS then
-           raise EPipSetupFailed.Create('Failed to setup PIP.' + #13#10 + LOut);
+    LCmd := TExecCmdService.Cmd(
+      LExecutable,
+      TExecCmdArgs.BuildArgv(
+        LExecutable, [LFileName]),
+      TExecCmdArgs.BuildEnvp(
+        LPythonHome,
+        LExecutable,
+        LSharedLibrary))
+      .Run(LOutput);
+
+    LExitCode := LCmd.SpinWait(function(): boolean begin
+      Result := ACancelation.IsCanceled;
+    end);
+
+    if ACancelation.IsCanceled then
+      LCmd.Kill()
+    else if (LExitCode <> EXIT_SUCCESS) then
+      raise EPipSetupFailed.Create('PIP setup has failed.' + #13#10 + LOutput);
   finally
     LResStream.Free();
   end;

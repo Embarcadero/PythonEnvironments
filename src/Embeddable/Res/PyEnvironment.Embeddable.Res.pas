@@ -60,7 +60,10 @@ type
 implementation
 
 uses
-  System.SysUtils, System.Types, System.IOUtils, System.Character,
+  System.SysUtils,
+  System.Types,
+  System.IOUtils,
+  System.Character,
   PythonEngine,
   PyEnvironment.Path;
 
@@ -68,9 +71,10 @@ uses
 
 constructor TPyCustomEmbeddedResEnvironment.Create(AOwner: TComponent);
 begin
-  SetPythonVersion(String.Empty);
-  FEnvironmentPath := TPyEnvironmentPath.CreateEnvironmentPath();
   inherited;
+  SetPythonVersion(String.Empty);
+  if not (csDesigning in ComponentState) then
+    FEnvironmentPath := TPyEnvironmentPath.CreateEnvironmentPath();
 end;
 
 function TPyCustomEmbeddedResEnvironment.CreateCollection: TPyDistributionCollection;

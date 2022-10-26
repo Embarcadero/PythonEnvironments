@@ -36,8 +36,7 @@ uses
   System.Classes,
   System.SysUtils,
   System.SysConst,
-  PyTools.Cancelation,
-  PyEnvironment.Notification;
+  PyTools.Cancelation;
 
 type
   TPyDistribution = class abstract(TCollectionItem)
@@ -46,10 +45,8 @@ type
     FHome: string;
     FSharedLibrary: string;
     FExecutable: string;
-  protected
-    function GetNotifier<Notifier>(): IEnvironmentNotifier<Notifier>;
   public
-    procedure Setup(const ACancelation: ICancelation); virtual;
+    function Setup(const ACancelation: ICancelation): boolean; virtual;
     function IsAvailable(): boolean; virtual;
   published
     property PythonVersion: string read FPythonVersion write FPythonVersion;
@@ -59,8 +56,6 @@ type
   end;
 
   TPyDistributionCollection = class abstract(TOwnedCollection)
-  protected
-    function GetNotifier<Notifier>(): IEnvironmentNotifier<Notifier>;
   public
     function LocateEnvironment(APythonVersion: string): TPyDistribution; virtual;
   end;
@@ -72,11 +67,6 @@ uses
 
 { TPyDistribution }
 
-function TPyDistribution.GetNotifier<Notifier>: IEnvironmentNotifier<Notifier>;
-begin
-  Result := (Collection as TPyDistributionCollection).GetNotifier<Notifier>;
-end;
-
 function TPyDistribution.IsAvailable: boolean;
 begin
   Result := not FPythonVersion.IsEmpty()
@@ -85,19 +75,13 @@ begin
     and TFile.Exists(FExecutable)
 end;
 
-procedure TPyDistribution.Setup(const ACancelation: ICancelation);
+function TPyDistribution.Setup(const ACancelation: ICancelation): boolean;
 begin
   ACancelation.CheckCanceled();
+  Result := false;
 end;
 
 { TPyDistributionCollection }
-
-function TPyDistributionCollection.GetNotifier<Notifier>: IEnvironmentNotifier<Notifier>;
-begin
-  GetOwner().GetInterface(IEnvironmentNotifier<Notifier>, Result);
-  if not Assigned(Result) then
-    raise ENotificationCenterNotAvailable.Create('Notification center not available.');
-end;
 
 function TPyDistributionCollection.LocateEnvironment(
   APythonVersion: string): TPyDistribution;

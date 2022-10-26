@@ -53,7 +53,7 @@ type
   (*-----------------------------------------------------------------------*)
   TPyLocalDistribution = class(TPyDistribution)
   public
-    procedure Setup(const ACancelation: ICancelation); override;
+    function Setup(const ACancelation: ICancelation): boolean; override;
   end;
 
   TPyLocalCollection = class(TPyDistributionCollection);
@@ -82,9 +82,10 @@ uses
 
 { TPyLocalDistribution }
 
-procedure TPyLocalDistribution.Setup(const ACancelation: ICancelation);
+function TPyLocalDistribution.Setup(const ACancelation: ICancelation): boolean;
 begin
   inherited;
+  Result := true;
 end;
 
 { TPyLocalEnvironment }
