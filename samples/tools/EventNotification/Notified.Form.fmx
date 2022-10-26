@@ -1,0 +1,25 @@
+object NotifiedForm: TNotifiedForm
+  Left = 0
+  Top = 0
+  Caption = 'Notified'
+  ClientHeight = 143
+  ClientWidth = 298
+  Position = MainFormCenter
+  FormFactor.Width = 320
+  FormFactor.Height = 480
+  FormFactor.Devices = [Desktop]
+  OnCreate = FormCreate
+  OnDestroy = FormDestroy
+  DesignerMasterStyle = 0
+  object Memo1: TMemo
+    Touch.InteractiveGestures = [Pan, LongTap, DoubleTap]
+    DataDetectorTypes = []
+    Align = Client
+    Size.Width = 298.000000000000000000
+    Size.Height = 143.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 0
+    Viewport.Width = 294.000000000000000000
+    Viewport.Height = 139.000000000000000000
+  end
+end
