@@ -75,6 +75,7 @@ type
     function Run(out AReader: TReader; out AWriter: TWriter; const ARedirections: TRedirections): IExecCmd; overload;
     procedure Kill();
     function Wait(): Integer;
+    function SpinWait(const ACondition: TFunc<boolean>; const ATimeOut: cardinal): Integer;
 
     property Status: cardinal read GetStatus;
     property IsAlive: boolean read GetIsAlive;
@@ -87,6 +88,7 @@ const
 implementation
 
 uses
+  System.SyncObjs,
   Math;
 
 { TExecCmd }
@@ -268,9 +270,33 @@ end;
 
 function TExecCmd.Wait: Integer;
 begin
-  while GetIsAlive do
-    Sleep(100);
-  Result := GetExitCode;
+  Result := SpinWait(function(): boolean begin
+    Result := false;
+  end, INFINITE);
+end;
+
+function TExecCmd.SpinWait(const ACondition: TFunc<boolean>;
+  const ATimeout: cardinal): Integer;
+var
+  LConditionHit: boolean;
+begin
+  TSpinWait.SpinUntil(function(): boolean begin
+    LConditionHit := false;
+
+    Result := not GetIsAlive();
+
+    if Result then
+      Exit(true);
+
+    LConditionHit := ACondition();
+
+    Result := LConditionHit;
+  end, ATimeout);
+
+  if LConditionHit then
+    Result := EXIT_FAILURE
+  else
+    Result := GetExitCode();
 end;
 
 procedure TExecCmd.Kill;
