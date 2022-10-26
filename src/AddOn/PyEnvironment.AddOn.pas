@@ -33,10 +33,14 @@ unit PyEnvironment.AddOn;
 interface
 
 uses
-  System.Classes, System.Generics.Collections, System.SysUtils,
-  PyEnvironment,
-  PyEnvironment.Notification,
-  PyEnvironment.Distribution;
+  System.Classes,
+  System.Generics.Collections,
+  System.SysUtils,
+  System.Types,
+  System.Rtti,
+  System.Threading,
+  PyTools.Cancelation,
+  PyEnvironment;
 
 type
   TPyEnvironmentCustomAddOn = class;
@@ -45,39 +49,49 @@ type
     trBeforeSetup, trAfterSetup,
     trBeforeActivate, trAfterActivate,
     trBeforeDeactivate, trAfterDeactivate);
+
   TPyEnvironmentaddOnTriggers = set of TPyEnvironmentaddOnTrigger;
 
-  TPyEnvironmentAddOnExecute = procedure(const ASender: TObject;
-    const ATrigger: TPyEnvironmentaddOnTrigger;
-    const ADistribution: TPyDistribution) of object;
+  TPyEnvironmentAddOnExecute = procedure(const ASender: TObject) of object;
 
   TPyEnvironmentAddOnExecuteError = procedure(const ASender: TObject;
-    const ADistribution: TPyDistribution; const AException: Exception) of object;
+    const AException: Exception) of object;
 
-  TPyEnvironmentCustomAddOn = class(TComponent, IEnvironmentNotified<TPyCustomEnvironment>)
+  TPyEnvironmentCustomAddOn = class(TComponent, IPyEnvironmentPlugin)
+  private type
+    TPyEnvironmentCustomAddonAsyncResult = class(TBaseAsyncResult)
+    private
+      FAsyncTask: TProc<ICancelation>;
+      FCancelation: ICancelation;
+    protected
+      procedure AsyncDispatch; override;
+      procedure Schedule; override;
+      function DoCancel: Boolean; override;
+    public
+      constructor Create(const AContext: TObject; const AAsyncTask: TProc<ICancelation>);
+    end;
   private
     FEnvironment: TPyCustomEnvironment;
     FOnExecute: TPyEnvironmentAddOnExecute;
     FTriggers: TPyEnvironmentaddOnTriggers;
     FOnExecuteError: TPyEnvironmentAddOnExecuteError;
     procedure SetEnvironment(const Value: TPyCustomEnvironment);
-    //IEnvironmentNotified implementation
-    procedure NotifyUpdate(const ANotifier: TPyCustomEnvironment;
-      const ANotification: TEnvironmentNotification;
-      const AArgs: TObject);
+    //IPlugin implementation
+    function Install(const AArgs: TArray<TValue> = []): IAsyncResult;
+    function Uninstall(const AArgs: TArray<TValue> = []): IAsyncResult;
   protected
     procedure Notification(AComponent: TComponent; AOperation: TOperation); override;
   protected
     //Getters and Setters
+    function GetInfo(): TPyPluginInfo; virtual; abstract;
     procedure SetTriggers(const Value: TPyEnvironmentaddOnTriggers); virtual;
   protected
-    function GetTriggerFromNotification(const ANotification: TEnvironmentNotification;
-      out ATrigger: TPyEnvironmentaddOnTrigger): boolean; overload;
-    function CanExecute(ATrigger: TPyEnvironmentaddOnTrigger): boolean; overload;
-    procedure InternalExecute(const ATriggeredBy: TPyEnvironmentaddOnTrigger;
-      const ADistribution: TPyDistribution); virtual; abstract;
+    procedure InternalExecute(const ACancelation: ICancelation); virtual; abstract;
+    function IsInstalled(): boolean; virtual; abstract;
   public
-    procedure Execute(const ATrigger: TPyEnvironmentaddOnTrigger; const ADistribution: TPyDistribution);
+    destructor Destroy(); override;
+
+    procedure Execute(const ACancelation: ICancelation);
   published
     property Environment: TPyCustomEnvironment read FEnvironment write SetEnvironment;
     property Triggers: TPyEnvironmentaddOnTriggers read FTriggers write SetTriggers;
@@ -103,13 +117,15 @@ procedure TPyEnvironmentCustomAddOn.SetEnvironment(
 begin
   if Assigned(FEnvironment) then begin
     FEnvironment.RemoveFreeNotification(Self);
-    (FEnvironment as IEnvironmentNotifier<TPyCustomEnvironment>).RemoveListener(Self);
+    if not (csDesigning in ComponentState) then
+      FEnvironment.RemovePlugion(Self);
   end;
 
   FEnvironment := Value;
   if Assigned(FEnvironment) then begin
     FEnvironment.FreeNotification(Self);
-    (FEnvironment as IEnvironmentNotifier<TPyCustomEnvironment>).AddListener(Self);
+    if not (csDesigning in ComponentState) then
+      FEnvironment.AddPlugin(Self);
   end;
 end;
 
@@ -122,65 +138,70 @@ begin
   end;
 end;
 
-procedure TPyEnvironmentCustomAddOn.NotifyUpdate(
-  const ANotifier: TPyCustomEnvironment;
-  const ANotification: TEnvironmentNotification; const AArgs: TObject);
-var
-  LTrigger: TPyEnvironmentaddOnTrigger;
+destructor TPyEnvironmentCustomAddOn.Destroy;
 begin
-  if GetTriggerFromNotification(ANotification, LTrigger) then
-    Execute(LTrigger, (AArgs as TPyDistribution));
+  SetEnvironment(nil);
+  inherited;
 end;
 
-function TPyEnvironmentCustomAddOn.GetTriggerFromNotification(
-  const ANotification: TEnvironmentNotification;
-  out ATrigger: TPyEnvironmentaddOnTrigger): boolean;
+procedure TPyEnvironmentCustomAddOn.Execute(const ACancelation: ICancelation);
 begin
-  case ANotification of
-    BEFORE_SETUP_NOTIFICATION:
-      ATrigger := TPyEnvironmentaddOnTrigger.trBeforeSetup;
-    AFTER_SETUP_NOTIFICATION:
-      ATrigger := TPyEnvironmentaddOnTrigger.trAfterSetup;
-    BEFORE_ACTIVATE_NOTIFICATION:
-      ATrigger := TPyEnvironmentaddOnTrigger.trBeforeActivate;
-    AFTER_ACTIVATE_NOTIFICATION:
-      ATrigger := TPyEnvironmentaddOnTrigger.trAfterActivate;
-    BEFORE_DEACTIVATE_NOTIFICATION:
-      ATrigger := TPyEnvironmentaddOnTrigger.trBeforeDeactivate;
-    AFTER_DEACTIVATE_NOTIFICATION:
-      ATrigger := TPyEnvironmentaddOnTrigger.trAfterDeactivate;
-    else
-      Exit(false);
-  end;
-  Result := True;
-end;
-
-function TPyEnvironmentCustomAddOn.CanExecute(
-  ATrigger: TPyEnvironmentaddOnTrigger): boolean;
-begin
-  Result := (ATrigger in Triggers);
-end;
-
-procedure TPyEnvironmentCustomAddOn.Execute(
-  const ATrigger: TPyEnvironmentaddOnTrigger;
-  const ADistribution: TPyDistribution);
-begin
-  if not CanExecute(ATrigger) then
-    Exit;
+  Assert(Assigned(ACancelation), 'Invalid argument "ACancelation".');
 
   if Assigned(FOnExecute) then
-    FOnExecute(Self, ATrigger, ADistribution);
+    FOnExecute(Self);
 
   try
-    InternalExecute(ATrigger, ADistribution);
+    InternalExecute(ACancelation);
   except
     on E: Exception do begin
       if Assigned(FOnExecuteError) then
-        FOnExecuteError(Self, ADistribution, E)
+        FOnExecuteError(Self, E)
       else
         raise;
     end;
   end;
+end;
+
+function TPyEnvironmentCustomAddOn.Install(
+  const AArgs: TArray<TValue>): IAsyncResult;
+begin
+  Result := TPyEnvironmentCustomAddonAsyncResult.Create(Self,
+    procedure(ACancelation: ICancelation) begin
+      Execute(ACancelation);
+    end).Invoke();
+end;
+
+function TPyEnvironmentCustomAddOn.Uninstall(
+  const AArgs: TArray<TValue>): IAsyncResult;
+begin
+  //
+end;
+
+{ TPyEnvironmentCustomAddOn.TPyEnvironmentCustomAddonAsyncResult }
+
+constructor TPyEnvironmentCustomAddOn.TPyEnvironmentCustomAddonAsyncResult.Create(
+  const AContext: TObject; const AAsyncTask: TProc<ICancelation>);
+begin
+  inherited Create(AContext);
+  FAsyncTask := AAsyncTask;
+  FCancelation := TCancelation.Create();
+end;
+
+function TPyEnvironmentCustomAddOn.TPyEnvironmentCustomAddonAsyncResult.DoCancel: Boolean;
+begin
+  FCancelation.Cancel();
+  Result := true;
+end;
+
+procedure TPyEnvironmentCustomAddOn.TPyEnvironmentCustomAddonAsyncResult.AsyncDispatch;
+begin
+  FAsyncTask(FCancelation);
+end;
+
+procedure TPyEnvironmentCustomAddOn.TPyEnvironmentCustomAddonAsyncResult.Schedule;
+begin
+  TTask.Run(DoAsyncDispatch);
 end;
 
 end.

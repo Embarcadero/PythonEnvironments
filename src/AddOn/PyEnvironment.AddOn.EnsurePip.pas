@@ -33,16 +33,20 @@ unit PyEnvironment.AddOn.EnsurePip;
 interface
 
 uses
-  System.SysUtils, System.Classes,
-  PyEnvironment.Distribution, PyEnvironment.Notification, PyEnvironment.AddOn;
+  System.SysUtils,
+  System.Classes,
+  PyTools.Cancelation,
+  PyEnvironment,
+  PyEnvironment.AddOn;
 
 type
   [ComponentPlatforms(pidAllPlatforms)]
   TPyEnvironmentAddOnEnsurePip = class(TPyEnvironmentCustomAddOn)
   protected
+    function GetInfo(): TPyPluginInfo; override;
+    function IsInstalled(): boolean; override;
     procedure SetTriggers(const Value: TPyEnvironmentaddOnTriggers); override;
-    procedure InternalExecute(const ATriggeredBy: TPyEnvironmentaddOnTrigger;
-      const ADistribution: TPyDistribution); override;
+    procedure InternalExecute(const ACancelation: ICancelation); override;
   public
     constructor Create(AOwner: TComponent); override;
   published
@@ -54,7 +58,10 @@ type
 implementation
 
 uses
-  PyTools.ExecCmd, PyTools.ExecCmd.Args;
+  System.IOUtils,
+  PythonEngine,
+  PyTools.ExecCmd,
+  PyTools.ExecCmd.Args;
 
 { TPyEnvironmentAddOnEnsurePip }
 
@@ -70,32 +77,75 @@ begin
   inherited;
 end;
 
-procedure TPyEnvironmentAddOnEnsurePip.InternalExecute(
-  const ATriggeredBy: TPyEnvironmentaddOnTrigger;
-  const ADistribution: TPyDistribution);
+function TPyEnvironmentAddOnEnsurePip.GetInfo: TPyPluginInfo;
+begin
+  Result.Name := 'ensurepip';
+  Result.Description :=
+    'Provides support for bootstrapping the pip installer into an existing '
+    + 'Python installation or virtual environment.'
+    + sLineBreak
+    + 'See more: https://pip.pypa.io/en/stable/installation/#ensurepip';
+  Result.InstallsWhen := [TPyPluginEvent.AfterActivate];
+end;
+
+function TPyEnvironmentAddOnEnsurePip.IsInstalled: boolean;
 var
+  LPythonHome: string;
+  LExecutable: string;
+  LSharedLibrary: string;
+  LCmd: IExecCmd;
+begin
+  LPythonHome := GetPythonEngine().PythonHome;
+  LExecutable := GetPythonEngine().ProgramName;
+  LSharedLibrary := TPath.Combine(GetPythonEngine().DllPath,
+    GetPythonEngine().DllName);
+
+  LCmd := TExecCmdService.Cmd(
+    LExecutable,
+    TExecCmdArgs.BuildArgv(
+      LExecutable, ['-m', 'pip', '--version']),
+    TExecCmdArgs.BuildEnvp(
+      LPythonHome,
+      LExecutable,
+      LSharedLibrary)
+    ).Run();
+
+  Result := (LCmd.Wait() = EXIT_SUCCESS);
+end;
+
+procedure TPyEnvironmentAddOnEnsurePip.InternalExecute(
+  const ACancelation: ICancelation);
+var
+  LPythonHome: string;
+  LExecutable: string;
+  LSharedLibrary: string;
   LOutput: string;
+  LCmd: IExecCmd;
+  LExitCode: Integer;
 begin
   inherited;
-  { TODO : Check for valida executable and shared library files }
-  if (TExecCmdService.Cmd(ADistribution.Executable,
-        TExecCmdArgs.BuildArgv(
-          ADistribution.Executable, ['-m', 'pip', '--version']),
-        TExecCmdArgs.BuildEnvp(
-          ADistribution.Home,
-          ADistribution.Executable,
-          ADistribution.SharedLibrary)
-      ).Run().Wait() = EXIT_SUCCESS) then
-        Exit;
+  LPythonHome := GetPythonEngine().PythonHome;
+  LExecutable := GetPythonEngine().ProgramName;
+  LSharedLibrary := TPath.Combine(GetPythonEngine().DllPath,
+    GetPythonEngine().DllName);
 
-  if (TExecCmdService.Cmd(ADistribution.Executable,
-        TExecCmdArgs.BuildArgv(
-          ADistribution.Executable, ['-m', 'ensurepip']),
-        TExecCmdArgs.BuildEnvp(
-          ADistribution.Home,
-          ADistribution.Executable,
-          ADistribution.SharedLibrary)
-      ).Run(LOutput).Wait() <> EXIT_SUCCESS) then
+  LCmd := TExecCmdService.Cmd(
+    LExecutable,
+    TExecCmdArgs.BuildArgv(
+      LExecutable, ['-m', 'ensurepip']),
+    TExecCmdArgs.BuildEnvp(
+      LPythonHome,
+      LExecutable,
+      LSharedLibrary))
+    .Run(LOutput);
+
+  LExitCode := LCmd.SpinWait(function(): boolean begin
+    Result := ACancelation.IsCanceled;
+  end);
+
+  if ACancelation.IsCanceled then
+    LCmd.Kill()
+  else if (LExitCode <> EXIT_SUCCESS) then
     raise EPipSetupFailed.Create('PIP setup has failed.' + #13#10 + LOutput);
 end;
 
