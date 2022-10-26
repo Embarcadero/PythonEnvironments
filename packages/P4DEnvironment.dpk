@@ -37,7 +37,6 @@ requires
 contains
   PyEnvironment in '..\src\PyEnvironment.pas',
   PyEnvironment.Path in '..\src\PyEnvironment.Path.pas',
-  PyEnvironment.Notification in '..\src\PyEnvironment.Notification.pas',
   PyEnvironment.Distribution in '..\src\PyEnvironment.Distribution.pas',
   PyEnvironment.Local in '..\src\PyEnvironment.Local.pas',
   PyEnvironment.Embeddable in '..\src\Embeddable\PyEnvironment.Embeddable.pas',
