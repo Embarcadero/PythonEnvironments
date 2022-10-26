@@ -1,3 +1,33 @@
+(**************************************************************************)
+(*                                                                        *)
+(* Module:  Unit 'PyEnvironment.Project.IDE.Deploy'                       *)
+(*                                                                        *)
+(*                                  Copyright (c) 2021                    *)
+(*                                  Lucas Moura Belo - lmbelo             *)
+(*                                  lucas.belo@live.com                   *)
+(*                                  Brazil                                *)
+(*                                                                        *)
+(* Project page:         https://github.com/Embarcadero/PythonEnviroments *)
+(**************************************************************************)
+(*  Functionality: Deploy Python embeddables using project menu           *)
+(*                                                                        *)
+(*                                                                        *)
+(**************************************************************************)
+(* This source code is distributed with no WARRANTY, for no reason or use.*)
+(* Everyone is allowed to use and change this code free for his own tasks *)
+(* and projects, as long as this header and its copyright text is intact. *)
+(* For changed versions of this code, which are public distributed the    *)
+(* following additional conditions have to be fullfilled:                 *)
+(* 1) The header has to contain a comment on the change and the author of *)
+(*    it.                                                                 *)
+(* 2) A copy of the changed source has to be sent to the above E-Mail     *)
+(*    address or my then valid address, if this is possible to the        *)
+(*    author.                                                             *)
+(* The second condition has the target to maintain an up to date central  *)
+(* version of the component. If this condition is not acceptable for      *)
+(* confidential or legal reasons, everyone is free to derive a component  *)
+(* or to generate a diff file to my or other original sources.            *)
+(**************************************************************************)
 unit PyEnvironment.Project.IDE.Deploy;
 
 interface
@@ -56,71 +86,101 @@ begin
   FDeployableFiles := TDictionary<string, TArray<TPyEnvironmentDeployFile>>.Create();
 
   FDeployableFiles.Add('3.7', [
+    //Windows
     TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Win32,     'python\python3-windows-3.7.9-win32.zip',       '.\',                       True,  True, TDeployOperation.doCopyOnly,   ''), // Win32
     TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Win64,     'python\python3-windows-3.7.9-amd64.zip',       '.\',                       True,  True, TDeployOperation.doCopyOnly,   ''), // Win64
-    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Android,   'python\python3-android-3.7.13-arm.zip',        '.\assets\internal',        False, True, TDeployOperation.doCopyOnly,   ''), // Android
-    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Android64, 'python\python3-android-3.7.13-arm64.zip',      '.\assets\internal',        False, True, TDeployOperation.doCopyOnly,   ''), // Android64
-    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Android64, 'python\python3-android-3.7.13-arm.zip',        '.\assets\internal',        False, True, TDeployOperation.doCopyOnly,   '''$(AndroidAppBundle)''==''true'''), // Android64
-    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Android,   'python\android\3.7.13\arm\libpython3.7m.so',   'library\lib\armeabi-v7a\', False, True, TDeployOperation.doSetExecBit, ''), // Android
-    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Android64, 'python\android\3.7.13\arm64\libpython3.7m.so', 'library\lib\arm64-v8a\',   False, True, TDeployOperation.doSetExecBit, ''), // Android64
-    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Android64, 'python\android\3.7.13\arm\libpython3.7m.so',   'library\lib\armeabi-v7a\', False, True, TDeployOperation.doSetExecBit, '''$(AndroidAppBundle)''==''true'''), // Android64
-    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Android,   'python\android\3.7.13\arm\python3.7',          'library\lib\armeabi-v7a\', False, True, TDeployOperation.doSetExecBit, ''), // Android
-    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Android64, 'python\android\3.7.13\arm64\python3.7',        'library\lib\arm64-v8a\',   False, True, TDeployOperation.doSetExecBit, ''), // Android64
-    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Android64, 'python\android\3.7.13\arm\python3.7',          'library\lib\armeabi-v7a\', False, True, TDeployOperation.doSetExecBit, '''$(AndroidAppBundle)''==''true'''), // Android64
-    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.OSX64,     'python\python3-macos-3.7.13-x86_64.zip',       'Contents\MacOS\',          True,  True, TDeployOperation.doCopyOnly,   ''), // OSX64
-    //TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.OSXARM64,  'python\python3-macos-3.7.13-universal2.zip',   'Contents\MacOS\',          True,  True, TDeployOperation.doCopyOnly,   ''), // OSXARM64 //3.7 is not available for M1
-    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Linux64,   'python\python3-linux-3.7.13-x86_64.zip',       '.\',                       True,  True, TDeployOperation.doCopyOnly,   '')  // Linux64
+    //Android
+    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Android,   'python\python3-android-3.7.15-arm.zip',        '.\assets\internal',        False, True, TDeployOperation.doCopyOnly,   ''), // Android
+    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Android64, 'python\python3-android-3.7.15-arm64.zip',      '.\assets\internal',        False, True, TDeployOperation.doCopyOnly,   ''), // Android64
+    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Android64, 'python\python3-android-3.7.15-arm.zip',        '.\assets\internal',        False, True, TDeployOperation.doCopyOnly,   '''$(AndroidAppBundle)''==''true'''), // Android64
+    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Android,   'python\android\3.7.15\arm\libpython3.7m.so',   'library\lib\armeabi-v7a\', False, True, TDeployOperation.doSetExecBit, ''), // Android
+    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Android64, 'python\android\3.7.15\arm64\libpython3.7m.so', 'library\lib\arm64-v8a\',   False, True, TDeployOperation.doSetExecBit, ''), // Android64
+    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Android64, 'python\android\3.7.15\arm\libpython3.7m.so',   'library\lib\armeabi-v7a\', False, True, TDeployOperation.doSetExecBit, '''$(AndroidAppBundle)''==''true'''), // Android64
+    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Android,   'python\android\3.7.15\arm\python3.7m',         'library\lib\armeabi-v7a\', False, True, TDeployOperation.doSetExecBit, ''), // Android
+    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Android64, 'python\android\3.7.15\arm64\python3.7m',       'library\lib\arm64-v8a\',   False, True, TDeployOperation.doSetExecBit, ''), // Android64
+    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Android64, 'python\android\3.7.15\arm\python3.7m',         'library\lib\armeabi-v7a\', False, True, TDeployOperation.doSetExecBit, '''$(AndroidAppBundle)''==''true'''), // Android64
+    //MacOS
+    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.OSX64,     'python\python3-macos-3.7.15-x86_64.zip',       'Contents\Resources\',      True,  True, TDeployOperation.doCopyOnly,   ''), // OSX64
+    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.OSX64,     'python\macos\3.7.15\intel\libpython3.7m.dylib','Contents\MacOS\',          True,  True, TDeployOperation.doSetExecBit, ''), // OSX64
+    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.OSX64,     'python\macos\3.7.15\intel\python3.7m',         'Contents\MacOS\',          True,  True, TDeployOperation.doSetExecBit, ''), // OSX64
+    //TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.OSXARM64,  'python\python3-macos-3.7.13-universal2.zip',   'Contents\MacOS\',          True,  True, TDeployOperation.doCopyOnly,  ''), // OSXARM64 //3.7 is not available for M1
+    //Linux
+    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Linux64,   'python\python3-linux-3.7.15-x86_64.zip',       '.\',                       True,  True, TDeployOperation.doCopyOnly,   '')  // Linux64
   ]);
 
   FDeployableFiles.Add('3.8', [
+    //Windows
     TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Win32,     'python\python3-windows-3.8.10-win32.zip',     '.\',                        True,  True, TDeployOperation.doCopyOnly,   ''), // Win32
     TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Win64,     'python\python3-windows-3.8.10-amd64.zip',     '.\',                        True,  True, TDeployOperation.doCopyOnly,   ''), // Win64
-    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Android,   'python\python3-android-3.8.13-arm.zip',       '.\assets\internal',         False, True, TDeployOperation.doCopyOnly,   ''), // Android
-    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Android64, 'python\python3-android-3.8.13-arm64.zip',     '.\assets\internal',         False, True, TDeployOperation.doCopyOnly,   ''), // Android64
-    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Android64, 'python\python3-android-3.8.13-arm.zip',       '.\assets\internal',         False, True, TDeployOperation.doCopyOnly,   '''$(AndroidAppBundle)''==''true'''), // Android64
-    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Android,   'python\android\3.8.13\arm\libpython3.8.so',   'library\lib\armeabi-v7a\',  False, True, TDeployOperation.doSetExecBit, ''), // Android
-    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Android64, 'python\android\3.8.13\arm64\libpython3.8.so', 'library\lib\arm64-v8a\',    False, True, TDeployOperation.doSetExecBit, ''), // Android64
-    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Android64, 'python\android\3.8.13\arm\libpython3.8.so',   'library\lib\armeabi-v7a\',  False, True, TDeployOperation.doSetExecBit, '''$(AndroidAppBundle)''==''true'''), // Android64
-    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Android,   'python\android\3.8.13\arm\python3.8',         'library\lib\armeabi-v7a\',  False, True, TDeployOperation.doSetExecBit, ''), // Android
-    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Android64, 'python\android\3.8.13\arm64\python3.8',       'library\lib\arm64-v8a\',    False, True, TDeployOperation.doSetExecBit, ''), // Android64
-    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Android64, 'python\android\3.8.13\arm\python3.8',         'library\lib\armeabi-v7a\',  False, True, TDeployOperation.doSetExecBit, '''$(AndroidAppBundle)''==''true'''), // Android64
-    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.OSX64,     'python\python3-macos-3.8.13-x86_64.zip',      'Contents\MacOS\',           True,  True, TDeployOperation.doCopyOnly,   ''), // OSX64
-    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.OSXARM64,  'python\python3-macos-3.8.13-universal2.zip',  'Contents\MacOS\',           True,  True, TDeployOperation.doCopyOnly,   ''), // OSXARM64 //3.7 is not available for M1
-    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Linux64,   'python\python3-linux-3.8.13-x86_64.zip',      '.\',                        True,  True, TDeployOperation.doCopyOnly,   '')  // Linux64
+    //Android
+    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Android,   'python\python3-android-3.8.15-arm.zip',       '.\assets\internal',         False, True, TDeployOperation.doCopyOnly,   ''), // Android
+    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Android64, 'python\python3-android-3.8.15-arm64.zip',     '.\assets\internal',         False, True, TDeployOperation.doCopyOnly,   ''), // Android64
+    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Android64, 'python\python3-android-3.8.15-arm.zip',       '.\assets\internal',         False, True, TDeployOperation.doCopyOnly,   '''$(AndroidAppBundle)''==''true'''), // Android64
+    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Android,   'python\android\3.8.15\arm\libpython3.8.so',   'library\lib\armeabi-v7a\',  False, True, TDeployOperation.doSetExecBit, ''), // Android
+    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Android64, 'python\android\3.8.15\arm64\libpython3.8.so', 'library\lib\arm64-v8a\',    False, True, TDeployOperation.doSetExecBit, ''), // Android64
+    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Android64, 'python\android\3.8.15\arm\libpython3.8.so',   'library\lib\armeabi-v7a\',  False, True, TDeployOperation.doSetExecBit, '''$(AndroidAppBundle)''==''true'''), // Android64
+    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Android,   'python\android\3.8.15\arm\python3.8',         'library\lib\armeabi-v7a\',  False, True, TDeployOperation.doSetExecBit, ''), // Android
+    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Android64, 'python\android\3.8.15\arm64\python3.8',       'library\lib\arm64-v8a\',    False, True, TDeployOperation.doSetExecBit, ''), // Android64
+    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Android64, 'python\android\3.8.15\arm\python3.8',         'library\lib\armeabi-v7a\',  False, True, TDeployOperation.doSetExecBit, '''$(AndroidAppBundle)''==''true'''), // Android64
+    //MacOS
+    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.OSX64,     'python\python3-macos-3.8.15-x86_64.zip',      'Contents\Resources\',       True,  True, TDeployOperation.doCopyOnly,   ''), // OSX64
+    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.OSXARM64,  'python\python3-macos-3.8.15-universal2.zip',  'Contents\Resources\',       True,  True, TDeployOperation.doCopyOnly,   ''), // OSXARM64
+    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.OSX64,     'python\macos\3.8.15\intel\libpython3.8.dylib','Contents\MacOS\',           True,  True, TDeployOperation.doSetExecBit, ''), // OSX64
+    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.OSX64,     'python\macos\3.8.15\intel\python3.8',         'Contents\MacOS\',           True,  True, TDeployOperation.doSetExecBit, ''), // OSX64
+    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.OSXARM64,  'python\macos\3.8.15\arm\libpython3.8.dylib',  'Contents\MacOS\',           True,  True, TDeployOperation.doSetExecBit, ''), // OSXARM64
+    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.OSXARM64,  'python\macos\3.8.15\arm\python3.8',           'Contents\MacOS\',           True,  True, TDeployOperation.doSetExecBit, ''), // OSXARM64
+    //Linux
+    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Linux64,   'python\python3-linux-3.8.15-x86_64.zip',      '.\',                        True,  True, TDeployOperation.doCopyOnly,   '')  // Linux64
   ]);
 
   FDeployableFiles.Add('3.9', [
-    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Win32,     'python\python3-windows-3.9.12-win32.zip',     '.\',                        True,  True, TDeployOperation.doCopyOnly,   ''), // Win32
-    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Win64,     'python\python3-windows-3.9.12-amd64.zip',     '.\',                        True,  True, TDeployOperation.doCopyOnly,   ''), // Win64
-    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Android,   'python\python3-android-3.9.12-arm.zip',       '.\assets\internal',         False, True, TDeployOperation.doCopyOnly,   ''), // Android
-    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Android64, 'python\python3-android-3.9.12-arm64.zip',     '.\assets\internal',         False, True, TDeployOperation.doCopyOnly,   ''), // Android64
-    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Android64, 'python\python3-android-3.9.12-arm.zip',       '.\assets\internal',         False, True, TDeployOperation.doCopyOnly,   '''$(AndroidAppBundle)''==''true'''), // Android64
-    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Android,   'python\android\3.9.12\arm\libpython3.9.so',   'library\lib\armeabi-v7a\',  False, True, TDeployOperation.doSetExecBit, ''), // Android
-    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Android64, 'python\android\3.9.12\arm64\libpython3.9.so', 'library\lib\arm64-v8a\',    False, True, TDeployOperation.doSetExecBit, ''), // Android64
-    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Android64, 'python\android\3.9.12\arm\libpython3.9.so',   'library\lib\armeabi-v7a\',  False, True, TDeployOperation.doSetExecBit, '''$(AndroidAppBundle)''==''true'''), // Android64
-    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Android,   'python\android\3.9.12\arm\python3.9',         'library\lib\armeabi-v7a\',  False, True, TDeployOperation.doSetExecBit, ''), // Android
-    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Android64, 'python\android\3.9.12\arm64\python3.9',       'library\lib\arm64-v8a\',    False, True, TDeployOperation.doSetExecBit, ''), // Android64
-    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Android64, 'python\android\3.9.12\arm\python3.9',         'library\lib\armeabi-v7a\',  False, True, TDeployOperation.doSetExecBit, '''$(AndroidAppBundle)''==''true'''), // Android64
-    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.OSX64,     'python\python3-macos-3.9.12-x86_64.zip',      'Contents\MacOS\',           True,  True, TDeployOperation.doCopyOnly,   ''), // OSX64
-    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.OSXARM64,  'python\python3-macos-3.9.12-universal2.zip',  'Contents\MacOS\',           True,  True, TDeployOperation.doCopyOnly,   ''), // OSXARM64 //3.7 is not available for M1
-    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Linux64,   'python\python3-linux-3.9.12-x86_64.zip',      '.\',                        True,  True, TDeployOperation.doCopyOnly,   '')  // Linux64
+    //Windows
+    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Win32,     'python\python3-windows-3.9.13-win32.zip',     '.\',                        True,  True, TDeployOperation.doCopyOnly,   ''), // Win32
+    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Win64,     'python\python3-windows-3.9.13-amd64.zip',     '.\',                        True,  True, TDeployOperation.doCopyOnly,   ''), // Win64
+    //Android
+    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Android,   'python\python3-android-3.9.15-arm.zip',       '.\assets\internal',         False, True, TDeployOperation.doCopyOnly,   ''), // Android
+    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Android64, 'python\python3-android-3.9.15-arm64.zip',     '.\assets\internal',         False, True, TDeployOperation.doCopyOnly,   ''), // Android64
+    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Android64, 'python\python3-android-3.9.15-arm.zip',       '.\assets\internal',         False, True, TDeployOperation.doCopyOnly,   '''$(AndroidAppBundle)''==''true'''), // Android64
+    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Android,   'python\android\3.9.15\arm\libpython3.9.so',   'library\lib\armeabi-v7a\',  False, True, TDeployOperation.doSetExecBit, ''), // Android
+    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Android64, 'python\android\3.9.15\arm64\libpython3.9.so', 'library\lib\arm64-v8a\',    False, True, TDeployOperation.doSetExecBit, ''), // Android64
+    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Android64, 'python\android\3.9.15\arm\libpython3.9.so',   'library\lib\armeabi-v7a\',  False, True, TDeployOperation.doSetExecBit, '''$(AndroidAppBundle)''==''true'''), // Android64
+    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Android,   'python\android\3.9.15\arm\python3.9',         'library\lib\armeabi-v7a\',  False, True, TDeployOperation.doSetExecBit, ''), // Android
+    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Android64, 'python\android\3.9.15\arm64\python3.9',       'library\lib\arm64-v8a\',    False, True, TDeployOperation.doSetExecBit, ''), // Android64
+    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Android64, 'python\android\3.9.15\arm\python3.9',         'library\lib\armeabi-v7a\',  False, True, TDeployOperation.doSetExecBit, '''$(AndroidAppBundle)''==''true'''), // Android64
+    //MacOS
+    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.OSX64,     'python\python3-macos-3.9.15-x86_64.zip',      'Contents\Resources\',       True,  True, TDeployOperation.doCopyOnly,   ''), // OSX64
+    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.OSXARM64,  'python\python3-macos-3.9.15-universal2.zip',  'Contents\Resources\',       True,  True, TDeployOperation.doCopyOnly,   ''), // OSXARM64
+    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.OSX64,     'python\macos\3.9.15\intel\libpython3.9.dylib','Contents\MacOS\',           True,  True, TDeployOperation.doSetExecBit, ''), // OSX64
+    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.OSX64,     'python\macos\3.9.15\intel\python3.9',         'Contents\MacOS\',           True,  True, TDeployOperation.doSetExecBit, ''), // OSX64
+    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.OSXARM64,  'python\macos\3.9.15\arm\libpython3.9.dylib',  'Contents\MacOS\',           True,  True, TDeployOperation.doSetExecBit, ''), // OSXARM64
+    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.OSXARM64,  'python\macos\3.9.15\arm\python3.9',           'Contents\MacOS\',           True,  True, TDeployOperation.doSetExecBit, ''), // OSXARM64
+    //Linux
+    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Linux64,   'python\python3-linux-3.9.15-x86_64.zip',      '.\',                        True,  True, TDeployOperation.doCopyOnly,   '')  // Linux64
   ]);
 
   FDeployableFiles.Add('3.10', [
-    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Win32,     'python\python3-windows-3.10.4-win32.zip',      '.\',                        True,  True, TDeployOperation.doCopyOnly,  ''), // Win32
-    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Win64,     'python\python3-windows-3.10.4-amd64.zip',      '.\',                        True,  True, TDeployOperation.doCopyOnly,  ''), // Win64
-    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Android,   'python\python3-android-3.10.4-arm.zip',        '.\assets\internal',         False, True, TDeployOperation.doCopyOnly,  ''), // Android
-    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Android64, 'python\python3-android-3.10.4-arm64.zip',      '.\assets\internal',         False, True, TDeployOperation.doCopyOnly,  ''), // Android64
-    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Android64, 'python\python3-android-3.10.4-arm.zip',        '.\assets\internal',         False, True, TDeployOperation.doCopyOnly,  '''$(AndroidAppBundle)''==''true'''), // Android64
-    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Android,   'python\android\3.10.4\arm\libpython3.10.so',   'library\lib\armeabi-v7a\',  False, True, TDeployOperation.doSetExecBit, ''), // Android
-    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Android64, 'python\android\3.10.4\arm64\libpython3.10.so', 'library\lib\arm64-v8a\',    False, True, TDeployOperation.doSetExecBit, ''), // Android64
-    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Android64, 'python\android\3.10.4\arm\libpython3.10.so',   'library\lib\armeabi-v7a\',  False, True, TDeployOperation.doSetExecBit, '''$(AndroidAppBundle)''==''true'''), // Android64
-    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Android,   'python\android\3.10.4\arm\python3.10',         'library\lib\armeabi-v7a\',  False, True, TDeployOperation.doSetExecBit, ''), // Android
-    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Android64, 'python\android\3.10.4\arm64\python3.10',       'library\lib\arm64-v8a\',    False, True, TDeployOperation.doSetExecBit, ''), // Android64
-    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Android64, 'python\android\3.10.4\arm\python3.10',         'library\lib\armeabi-v7a\',  False, True, TDeployOperation.doSetExecBit, '''$(AndroidAppBundle)''==''true'''), // Android64
-    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.OSX64,     'python\python3-macos-3.10.4-x86_64.zip',       'Contents\MacOS\',           True,  True, TDeployOperation.doCopyOnly,   ''), // OSX64
-    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.OSXARM64,  'python\python3-macos-3.10.4-universal2.zip',   'Contents\MacOS\',           True,  True, TDeployOperation.doCopyOnly,   ''), // OSXARM64 //3.7 is not available for M1
-    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Linux64,   'python\python3-linux-3.10.4-x86_64.zip',       '.\',                        True,  True, TDeployOperation.doCopyOnly,   '')  // Linux64
+    //Windows
+    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Win32,     'python\python3-windows-3.10.8-win32.zip',      '.\',                        True,  True, TDeployOperation.doCopyOnly,  ''), // Win32
+    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Win64,     'python\python3-windows-3.10.8-amd64.zip',      '.\',                        True,  True, TDeployOperation.doCopyOnly,  ''), // Win64
+    //Android
+    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Android,   'python\python3-android-3.10.8-arm.zip',        '.\assets\internal',         False, True, TDeployOperation.doCopyOnly,  ''), // Android
+    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Android64, 'python\python3-android-3.10.8-arm64.zip',      '.\assets\internal',         False, True, TDeployOperation.doCopyOnly,  ''), // Android64
+    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Android64, 'python\python3-android-3.10.8-arm.zip',        '.\assets\internal',         False, True, TDeployOperation.doCopyOnly,  '''$(AndroidAppBundle)''==''true'''), // Android64
+    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Android,   'python\android\3.10.8\arm\libpython3.10.so',   'library\lib\armeabi-v7a\',  False, True, TDeployOperation.doSetExecBit, ''), // Android
+    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Android64, 'python\android\3.10.8\arm64\libpython3.10.so', 'library\lib\arm64-v8a\',    False, True, TDeployOperation.doSetExecBit, ''), // Android64
+    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Android64, 'python\android\3.10.8\arm\libpython3.10.so',   'library\lib\armeabi-v7a\',  False, True, TDeployOperation.doSetExecBit, '''$(AndroidAppBundle)''==''true'''), // Android64
+    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Android,   'python\android\3.10.8\arm\python3.10',         'library\lib\armeabi-v7a\',  False, True, TDeployOperation.doSetExecBit, ''), // Android
+    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Android64, 'python\android\3.10.8\arm64\python3.10',       'library\lib\arm64-v8a\',    False, True, TDeployOperation.doSetExecBit, ''), // Android64
+    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Android64, 'python\android\3.10.8\arm\python3.10',         'library\lib\armeabi-v7a\',  False, True, TDeployOperation.doSetExecBit, '''$(AndroidAppBundle)''==''true'''), // Android64
+    //MacOS
+    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.OSX64,     'python\python3-macos-3.10.8-x86_64.zip',       'Contents\Resources\',       True,  True, TDeployOperation.doCopyOnly,   ''), // OSX64
+    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.OSXARM64,  'python\python3-macos-3.10.8-universal2.zip',   'Contents\Resources\',       True,  True, TDeployOperation.doCopyOnly,   ''), // OSXARM64
+    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.OSX64,     'python\macos\3.10.8\intel\libpython3.10.dylib','Contents\MacOS\',           True,  True, TDeployOperation.doSetExecBit, ''), // OSX64
+    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.OSX64,     'python\macos\3.10.8\intel\python3.10',         'Contents\MacOS\',           True,  True, TDeployOperation.doSetExecBit, ''), // OSX64
+    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.OSXARM64,  'python\macos\3.10.8\arm\libpython3.10.dylib',  'Contents\MacOS\',           True,  True, TDeployOperation.doSetExecBit, ''), // OSXARM64
+    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.OSXARM64,  'python\macos\3.10.8\arm\python3.10',           'Contents\MacOS\',           True,  True, TDeployOperation.doSetExecBit, ''), // OSXARM64
+    //Linux
+    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Linux64,   'python\python3-linux-3.10.8-x86_64.zip',       '.\',                        True,  True, TDeployOperation.doCopyOnly,   '')  // Linux64
   ]);
 end;
 

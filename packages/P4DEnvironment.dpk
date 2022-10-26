@@ -21,6 +21,7 @@ package P4DEnvironment;
 {$VARSTRINGCHECKS ON}
 {$WRITEABLECONST OFF}
 {$MINENUMSIZE 1}
+{$IMAGEBASE $400000}
 {$DEFINE RELEASE}
 {$ENDIF IMPLICITBUILDING}
 {$LIBSUFFIX AUTO}
@@ -35,10 +36,9 @@ requires
 
 contains
   PyEnvironment in '..\src\PyEnvironment.pas',
-  PyEnvironment.Notification in '..\src\PyEnvironment.Notification.pas',
+  PyEnvironment.Path in '..\src\PyEnvironment.Path.pas',
   PyEnvironment.Distribution in '..\src\PyEnvironment.Distribution.pas',
   PyEnvironment.Local in '..\src\PyEnvironment.Local.pas',
-  PyEnvironment.Path in '..\src\PyEnvironment.Path.pas',
   PyEnvironment.Embeddable in '..\src\Embeddable\PyEnvironment.Embeddable.pas',
   PyEnvironment.Embeddable.Res in '..\src\Embeddable\Res\PyEnvironment.Embeddable.Res.pas',
   PyEnvironment.Embeddable.Res.Python37 in '..\src\Embeddable\Res\PyEnvironment.Embeddable.Res.Python37.pas',
