@@ -35,7 +35,7 @@ interface
 type
   TPyEnvironmentPath = class
   public const
-    ENVIRONMENT_PATH = '$(ROOT_PATH)';
+    ENVIRONMENT_PATH = '$(ENVIRONMENT_PATH)';
     EMBEDDABLES_PATH = '$(EMBEDDABLES_PATH)';
     PYTHON_VER = '$(PYTHON_VER)';
   public
@@ -84,7 +84,12 @@ class function TPyEnvironmentPath.ResolvePath(const APath: string): string;
 
 begin
   //Fix \ or / as dir separator. It varies in different platforms
-  Result := TRegEx.Replace(APath, '[\/]', TPath.DirectorySeparatorChar);
+  Result := TRegEx.Replace(APath,
+    '['
+  + TRegEx.Escape('\')
+  + TRegEx.Escape('/')
+  + ']',
+    TPath.DirectorySeparatorChar);
   //Replace the DEPLOY_PATH variable with the app root path
   Result := Result.Replace(ENVIRONMENT_PATH, GetRootPath());
   //Replace the EMBEDDABLES_PATH variable with the platform specific path
