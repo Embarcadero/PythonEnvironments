@@ -7,9 +7,9 @@
 (*                                  lucas.belo@live.com                   *)
 (*                                  Brazil                                *)
 (*                                                                        *)
-(* Project page:                    https://github.com/lmbelo/P4D_AI_ML   *)
+(* Project page:         https://github.com/Embarcadero/PythonEnviroments *)
 (**************************************************************************)
-(*  Functionality:  PyEnvironment Embeddable                              *)
+(*  Functionality:  PyEnvironment embeddable                              *)
 (*                                                                        *)
 (*                                                                        *)
 (**************************************************************************)
@@ -33,8 +33,13 @@ unit PyEnvironment.Embeddable;
 interface
 
 uses
-  System.Classes, System.SysUtils, System.Zip,
-  PyEnvironment, PyEnvironment.Distribution, PythonEngine;
+  System.Classes,
+  System.SysUtils,
+  System.Zip,
+  PythonEngine,
+  PyTools.Cancelation,
+  PyEnvironment,
+  PyEnvironment.Distribution;
 
 type
   (*-----------------------------------------------------------------------*)
@@ -73,12 +78,12 @@ type
     ///   Creates a new environment based on the current settings.
     ///   An embeddable distribution will be used as an "image".
     /// </summary>
-    procedure CreateEnvironment(); virtual;
-    procedure LoadSettings(); virtual;
+    procedure CreateEnvironment(const ACancelation: ICancelation); virtual;
+    procedure LoadSettings(const ACancelation: ICancelation); virtual;
   protected
     function GetEnvironmentPath(): string;
   public
-    procedure Setup(); override;
+    function Setup(const ACancelation: ICancelation): boolean; override;
   public
     property EmbeddablePackage: string read FEmbeddablePackage write FEmbeddablePackage;
   published
@@ -92,9 +97,9 @@ type
     FDeleteEmbeddable: boolean;
     procedure DoDeleteEmbeddable();
   protected
-    procedure LoadSettings(); override;
+    procedure LoadSettings(const ACancelation: ICancelation); override;
   public
-    procedure Setup(); override;
+    function Setup(const ACancelation: ICancelation): boolean; override;
     property Scanned: boolean read FScanned write FScanned;
   published
     property EmbeddablePackage;
@@ -146,7 +151,7 @@ type
     procedure SetScanner(const Value: TScanner);
   protected
     function CreateCollection(): TPyDistributionCollection; override;
-    procedure Prepare(); override;
+    procedure Prepare(const ACancelation: ICancelation); override;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy(); override;
@@ -160,36 +165,55 @@ type
 implementation
 
 uses
-  System.IOUtils, System.Character, System.StrUtils,
+  System.IOUtils,
+  System.Character,
+  System.StrUtils,
   PyEnvironment.Path,
   PyTools.ExecCmd,
-  PyEnvironment.Notification,
   PyEnvironment.Project
   {$IFDEF POSIX}
   , Posix.SysStat, Posix.Stdlib, Posix.String_, Posix.Errno
   {$ENDIF}
   ;
 
+type
+  TZipEventToAnonMethodAdapter = class
+  private type
+    TAdapter = TProc<TObject, string, TZipHeader, Int64>;
+  private
+    FAdapter: TAdapter;
+  public
+    constructor Create(const AAdapter: TAdapter);
+    procedure Evt(Sender: TObject; FileName: string; Header: TZipHeader; Position: Int64);
+  end;
+
 { TPyCustomEmbeddableDistribution }
 
-procedure TPyCustomEmbeddableDistribution.CreateEnvironment;
+procedure TPyCustomEmbeddableDistribution.CreateEnvironment(const ACancelation: ICancelation);
+var
+  LAdapter: TZipEventToAnonMethodAdapter;
+  LProgress: TZipEventToAnonMethodAdapter.TAdapter;
 begin
   //Unzip the embeddable package into the target directory.
-  GetNotifier<TPyCustomEnvironment>.NotifyAll(BEFORE_UNZIP_NOTIFICATION, Self);
-  TZipFile.ExtractZipFile(FEmbeddablePackage, GetEnvironmentPath(), DoZipProgressEvt);
-  GetNotifier<TPyCustomEnvironment>.NotifyAll(AFTER_UNZIP_NOTIFICATION, Self);
+  LProgress := procedure(Sender: TObject; FileName: string; Header: TZipHeader; Position: Int64)
+    begin
+      ACancelation.CheckCanceled();
+      DoZipProgressEvt(Sender, FileName, Header, Position);
+    end;
+
+  LAdapter := TZipEventToAnonMethodAdapter.Create(LProgress);
+  try
+    TZipFile.ExtractZipFile(FEmbeddablePackage, GetEnvironmentPath(), LAdapter.Evt);
+  finally
+    LAdapter.Free();
+  end;
 end;
 
 procedure TPyCustomEmbeddableDistribution.DoZipProgressEvt(Sender: TObject; FileName: string;
   Header: TZipHeader; Position: Int64);
 begin
   if Assigned(FOnZipProgress) then
-    if (TThread.Current.ThreadID <> MainThreadID) then
-      TThread.Queue(nil, procedure() begin
-        FOnZipProgress(Sender, Self, FileName, Header, Position);
-      end)
-    else
-      FOnZipProgress(Sender, Self, FileName, Header, Position);
+    FOnZipProgress(Sender, Self, FileName, Header, Position);
 end;
 
 function TPyCustomEmbeddableDistribution.EmbeddableExists: boolean;
@@ -226,12 +250,16 @@ function TPyCustomEmbeddableDistribution.FindExecutable: string;
     Result := TDirectory.GetFiles(APath, 'python*', TSearchOption.soTopDirectoryOnly,
       function(const Path: string; const SearchRec: TSearchRec): boolean
       begin
-        Result := Char.IsDigit(SearchRec.Name, Length(SearchRec.Name) - 1);
+        var LFileName: string := SearchRec.Name;
+        if LFileName.EndsWith('m') then //3.7 and lower contain a "m" as sufix.
+          LFileName := LFileName.Remove(Length(LFileName) - 1);
+
+        Result := Char.IsDigit(LFileName, Length(LFileName) - 1);
       end);
 
     {$IFDEF POSIX}
     for LFile in Result do begin
-      if (TPath.GetFileName(LFile) = 'python' + PythonVersion) and (FileIsExecutable(LFile)) then
+      if (TPath.GetFileName(LFile).StartsWith('python' + PythonVersion)) and (FileIsExecutable(LFile)) then
         Exit(TArray<string>.Create(LFile));
     end;
     {$ENDIF POSIX}
@@ -281,7 +309,7 @@ function TPyCustomEmbeddableDistribution.FindSharedLibrary: string;
       LSearch := ALibName.Replace(TPath.GetExtension(ALibName), '') + '*' + TPath.GetExtension(ALibName);
       Result := TDirectory.GetFiles(
         APath,
-        LSearch, //Python <= 3.7 might contain a "m" as a sufix.
+        LSearch, //Python <= 3.7 might contain a "m" as sufix.
         TSearchOption.soTopDirectoryOnly);
     end else
       Result := [LFile];
@@ -307,7 +335,15 @@ begin
   LFiles := DoSearch(LLibName, LPath);
   if LFiles <> nil then
     Exit(LFiles[Low(LFiles)]);
-  //Try to find it in the environments path
+  //Try to find it in the environment folder
+  LPath := TPath.Combine(GetEnvironmentPath(), 'lib');
+  {$ELSEIF DEFINED(MACOS)}
+  //Let's try it in the library path first
+  LPath := TPyEnvironmentPath.ResolvePath(TPyEnvironmentPath.ENVIRONMENT_PATH);
+  LFiles := DoSearch(LLibName, LPath);
+  if LFiles <> nil then
+    Exit(LFiles[Low(LFiles)]);
+  //Try to find it in the environment folder
   LPath := TPath.Combine(GetEnvironmentPath(), 'lib');
   {$ELSE}
   LPath := TPath.Combine(GetEnvironmentPath(), 'lib');
@@ -320,24 +356,27 @@ begin
     Result := String.Empty;
 
   {$IFDEF LINUX}
-  if TFile.Exists(Result + '.1.0') then //Targets directly to the so file instead of a symlink.
+  //Targets directly to the so file instead of a symlink.
+  if TFile.Exists(Result + '.1.0') then
     Result := Result + '.1.0';
   {$ENDIF}
 end;
 
-procedure TPyCustomEmbeddableDistribution.LoadSettings;
+procedure TPyCustomEmbeddableDistribution.LoadSettings(const ACancelation: ICancelation);
 begin
-  Home := TPyEnvironmentPath.ResolvePath(GetEnvironmentPath());
-  SharedLibrary := TPyEnvironmentPath.ResolvePath(FindSharedLibrary());
-  Executable := TPyEnvironmentPath.ResolvePath(FindExecutable());
+  ACancelation.CheckCanceled();
+
+  Home := GetEnvironmentPath();
+  SharedLibrary := FindSharedLibrary();
+  Executable := FindExecutable();
 end;
 
 function TPyCustomEmbeddableDistribution.GetEnvironmentPath: string;
 begin
-  Result := TPyEnvironmentPath.ResolvePath(EnvironmentPath);
+  Result := TPyEnvironmentPath.ResolvePath(EnvironmentPath, PythonVersion);
 end;
 
-procedure TPyCustomEmbeddableDistribution.Setup;
+function TPyCustomEmbeddableDistribution.Setup(const ACancelation: ICancelation): boolean;
 begin
   inherited;
   if not EnvironmentExists() then begin
@@ -345,12 +384,12 @@ begin
       raise EEmbeddableNotFound.CreateFmt(
         'Embeddable package not found.' + #13#10 + '%s', [FEmbeddablePackage]);
 
-    GetNotifier<TPyCustomEnvironment>.NotifyAll(BEFORE_CREATE_ENVIRONMENT_NOTIFICATION, Self);
-    CreateEnvironment();
-    GetNotifier<TPyCustomEnvironment>.NotifyAll(AFTER_CREATE_ENVIRONMENT_NOTIFICATION, Self);
+    CreateEnvironment(ACancelation);
   end;
 
-  LoadSettings();
+  LoadSettings(ACancelation);
+
+  Result := true;
 end;
 
 { TPyEmbeddableDistribution }
@@ -360,15 +399,15 @@ begin
   TFile.Delete(EmbeddablePackage);
 end;
 
-procedure TPyEmbeddableDistribution.LoadSettings;
+procedure TPyEmbeddableDistribution.LoadSettings(const ACancelation: ICancelation);
 begin
   if FScanned then
     inherited;
 end;
 
-procedure TPyEmbeddableDistribution.Setup;
+function TPyEmbeddableDistribution.Setup(const ACancelation: ICancelation): boolean;
 begin
-  inherited;
+  Result := inherited;
   if FDeleteEmbeddable and EmbeddableExists() then
     DoDeleteEmbeddable();
 end;
@@ -379,10 +418,18 @@ constructor TPyEmbeddedEnvironment.Create(AOwner: TComponent);
 begin
   inherited;
   FScanner := TScanner.Create();
-  PythonVersion := PythonProject.PythonVersion;
-  if PythonProject.Enabled then
-    FScanner.ScanRule := TScanRule.srFileName
-  else
+
+  if not (csDesigning in ComponentState) then begin
+    FScanner.EnvironmentPath := TPyEnvironmentPath.CreateEnvironmentPath();
+    FScanner.EmbeddablesPath := TPyEnvironmentPath.CreateEmbeddablesPath();
+  end;
+
+  if PythonProject.Enabled then begin
+    PythonVersion := PythonProject.PythonVersion;
+    FScanner.AutoScan := true;
+    FScanner.DeleteEmbeddable := true;
+    FScanner.ScanRule := TScanRule.srFileName;
+  end else
     FScanner.ScanRule := TScanRule.srFolder;
 end;
 
@@ -397,17 +444,26 @@ begin
   Result := TPyEmbeddableCollection.Create(Self, TPyEmbeddableDistribution);
 end;
 
-procedure TPyEmbeddedEnvironment.Prepare;
-var  
+procedure TPyEmbeddedEnvironment.Prepare(const ACancelation: ICancelation);
+var
+  I: integer;
+  LExistingEnvironment: string;
   LDistribution: TPyEmbeddableDistribution;
 begin
   if FScanner.AutoScan then begin
-    if PythonProject.Enabled then
-      if FScanner.EmbeddablesPath.IsEmpty() then begin
-        FScanner.EmbeddablesPath := TPyEnvironmentPath.DEPLOY_PATH;
-        FScanner.ScanRule := TScanRule.srFileName;
-        FScanner.DeleteEmbeddable := true;
+    //Let's first look for existing environments
+    for I := Low(PYTHON_KNOWN_VERSIONS) to High(PYTHON_KNOWN_VERSIONS) do begin
+      LExistingEnvironment := TPyEnvironmentPath.ResolvePath(
+        FScanner.EnvironmentPath,
+        PYTHON_KNOWN_VERSIONS[I].RegVersion);
+
+      if TDirectory.Exists(LExistingEnvironment) then begin
+        LDistribution := TPyEmbeddableDistribution(Distributions.Add());
+        LDistribution.Scanned := true;
+        LDistribution.PythonVersion := PYTHON_KNOWN_VERSIONS[I].RegVersion;
+        LDistribution.EnvironmentPath := LExistingEnvironment;
       end;
+    end;
 
     FScanner.Scan(
       TPyEnvironmentPath.ResolvePath(FScanner.EmbeddablesPath),
@@ -418,17 +474,13 @@ begin
         LDistribution := TPyEmbeddableDistribution(Distributions.Add());
         LDistribution.Scanned := true;
         LDistribution.PythonVersion := APyVersionInfo.RegVersion;
-        LDistribution.EnvironmentPath := TPath.Combine(
-          TPyEnvironmentPath.ResolvePath(
-            FScanner.EnvironmentPath),
+        LDistribution.EnvironmentPath := TPyEnvironmentPath.ResolvePath(
+          FScanner.EnvironmentPath,
           APyVersionInfo.RegVersion);
         LDistribution.EmbeddablePackage := AEmbeddablePackage;
         LDistribution.OnZipProgress := FOnZipProgress;
         LDistribution.DeleteEmbeddable := FScanner.DeleteEmbeddable;
       end);
-
-    if PythonVersion.IsEmpty() and (Distributions.Count > 0) then
-      PythonVersion := TPyEmbeddableDistribution(Distributions.Items[0]).PythonVersion;
   end;
   inherited;
 end;
@@ -481,6 +533,19 @@ begin
       ACallback(PYTHON_KNOWN_VERSIONS[I], LFiles[0]);
     end
   end;
+end;
+
+{ TZipEventToAnonMethodAdapter }
+
+constructor TZipEventToAnonMethodAdapter.Create(const AAdapter: TAdapter);
+begin
+  FAdapter := AAdapter;
+end;
+
+procedure TZipEventToAnonMethodAdapter.Evt(Sender: TObject; FileName: string;
+  Header: TZipHeader; Position: Int64);
+begin
+  FAdapter(Sender, FileName, Header, Position);
 end;
 
 end.

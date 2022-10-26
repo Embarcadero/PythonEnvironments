@@ -1,15 +1,15 @@
 (**************************************************************************)
 (*                                                                        *)
-(* Module:  Unit 'PyEnvironments.PyEnvironment'                           *)
+(* Module:  Unit 'PyEnvironment.Distribution'                             *)
 (*                                                                        *)
 (*                                  Copyright (c) 2021                    *)
 (*                                  Lucas Moura Belo - lmbelo             *)
 (*                                  lucas.belo@live.com                   *)
 (*                                  Brazil                                *)
 (*                                                                        *)
-(* Project page:                    https://github.com/lmbelo/P4D_AI_ML   *)
+(* Project page:         https://github.com/Embarcadero/PythonEnviroments *)
 (**************************************************************************)
-(*  Functionality:  PyEnvironments Enfironment Info                       *)
+(*  Functionality:  PyEnvironment distribution                            *)
 (*                                                                        *)
 (*                                                                        *)
 (**************************************************************************)
@@ -34,7 +34,9 @@ interface
 
 uses
   System.Classes,
-  PyEnvironment.Notification;
+  System.SysUtils,
+  System.SysConst,
+  PyTools.Cancelation;
 
 type
   TPyDistribution = class abstract(TCollectionItem)
@@ -43,10 +45,9 @@ type
     FHome: string;
     FSharedLibrary: string;
     FExecutable: string;
-  protected
-    function GetNotifier<Notifier>(): IEnvironmentNotifier<Notifier>;
   public
-    procedure Setup(); virtual; abstract;
+    function Setup(const ACancelation: ICancelation): boolean; virtual;
+    function IsAvailable(): boolean; virtual;
   published
     property PythonVersion: string read FPythonVersion write FPythonVersion;
     property Home: string read FHome write FHome;
@@ -55,8 +56,6 @@ type
   end;
 
   TPyDistributionCollection = class abstract(TOwnedCollection)
-  protected
-    function GetNotifier<Notifier>(): IEnvironmentNotifier<Notifier>;
   public
     function LocateEnvironment(APythonVersion: string): TPyDistribution; virtual;
   end;
@@ -64,23 +63,25 @@ type
 implementation
 
 uses
-  System.SysUtils;
+  System.IOUtils;
 
 { TPyDistribution }
 
-function TPyDistribution.GetNotifier<Notifier>: IEnvironmentNotifier<Notifier>;
+function TPyDistribution.IsAvailable: boolean;
 begin
-  Result := (Collection as TPyDistributionCollection).GetNotifier<Notifier>;
+  Result := not FPythonVersion.IsEmpty()
+    and TDirectory.Exists(FHome)
+    and TFile.Exists(FSharedLibrary)
+    and TFile.Exists(FExecutable)
+end;
+
+function TPyDistribution.Setup(const ACancelation: ICancelation): boolean;
+begin
+  ACancelation.CheckCanceled();
+  Result := false;
 end;
 
 { TPyDistributionCollection }
-
-function TPyDistributionCollection.GetNotifier<Notifier>: IEnvironmentNotifier<Notifier>;
-begin
-  GetOwner().GetInterface(IEnvironmentNotifier<Notifier>, Result);
-  if not Assigned(Result) then
-    raise ENotificationCenterNotAvailable.Create('Notification center not available.');
-end;
 
 function TPyDistributionCollection.LocateEnvironment(
   APythonVersion: string): TPyDistribution;
