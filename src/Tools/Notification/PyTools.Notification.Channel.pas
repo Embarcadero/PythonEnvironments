@@ -204,7 +204,8 @@ type
 implementation
 
 uses
-  System.Rtti;
+  System.Rtti,
+  PyTools.Exception;
 
 { RequestChannelAttribute }
 
@@ -285,7 +286,7 @@ begin
     LRttiType := LRttiType.BaseType;
   end;
 
-  raise Exception.Create('Channel type attribute not found.');
+  raise EChannelTypeAttributeNotFound.Create('Channel type attribute not found.');
 end;
 
 { TRequestChannel }
