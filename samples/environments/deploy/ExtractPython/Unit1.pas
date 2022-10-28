@@ -68,57 +68,46 @@ end;
 procedure TForm1.PyEmbeddedEnvironment1AfterActivate(Sender: TObject;
   const APythonVersion: string; const AActivated: Boolean);
 begin
-  TThread.Queue(nil, procedure() begin
-    Memo1.Lines.Add(Format('Python %s has been activated.', [APythonVersion]));
-  end);
+  Memo1.Lines.Add(Format('Python %s has been activated.', [APythonVersion]));
 end;
 
 procedure TForm1.PyEmbeddedEnvironment1AfterSetup(Sender: TObject;
   const APythonVersion: string);
 begin
-  TThread.Queue(nil, procedure() begin
-    Memo1.Lines.Add(Format('Python %s has been setup.', [APythonVersion]));
-  end);
+  Memo1.Lines.Add(Format('Python %s has been setup.', [APythonVersion]));
 end;
 
 procedure TForm1.PyEmbeddedEnvironment1BeforeActivate(Sender: TObject;
   const APythonVersion: string);
 begin
-  TThread.Queue(nil, procedure() begin
-    Memo1.Lines.Add(Format('Activating Python %s.', [APythonVersion]));
-  end);
+  Memo1.Lines.Add(Format('Activating Python %s.', [APythonVersion]));
 end;
 
 procedure TForm1.PyEmbeddedEnvironment1BeforeSetup(Sender: TObject;
   const APythonVersion: string);
 begin
-  TThread.Queue(nil, procedure() begin
-    Memo1.Lines.Add(Format('Setting up Python %s.', [APythonVersion]));
-  end);
+  Memo1.Lines.Add(Format('Setting up Python %s.', [APythonVersion]));
 end;
 
 procedure TForm1.PyEmbeddedEnvironment1Error(Sender: TObject;
   const AException: Exception);
 begin
-  TThread.Queue(nil, procedure() begin
-    Memo1.Lines.Add(Format(
-      'An error occurred during the installation process: %s', [
-      AException.ToString()]));
-  end);
+  Memo1.Lines.Add(Format(
+    'An error occurred during the installation process: %s', [
+    AException.ToString()]));
 end;
 
 procedure TForm1.PyEmbeddedEnvironment1Ready(Sender: TObject;
   const APythonVersion: string);
 begin
-  TThread.Queue(nil, procedure() begin
-    Memo1.Lines.Add(Format('Python %s is ready.', [APythonVersion]));
-  end);
+  Memo1.Lines.Add(Format('Python %s is ready.', [APythonVersion]));
 end;
 
 procedure TForm1.PyEmbeddedEnvironment1ZipProgress(Sender: TObject;
   ADistribution: TPyCustomEmbeddableDistribution; FileName: string;
   Header: TZipHeader; Position: Int64);
 begin
+  //Zip progress is not sync
   TThread.Queue(nil, procedure() begin
     Label1.Text := FileName.Replace(
       TDirectory.GetParent(ADistribution.EnvironmentPath), String.Empty, []);
