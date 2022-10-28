@@ -47,6 +47,7 @@ contains
   PyEnvironment.Embeddable.Res.Python310 in '..\src\Embeddable\Res\PyEnvironment.Embeddable.Res.Python310.pas',
   PyEnvironment.AddOn.EnsurePip in '..\src\AddOn\PyEnvironment.AddOn.EnsurePip.pas',
   PyEnvironment.AddOn.GetPip in '..\src\AddOn\PyEnvironment.AddOn.GetPip.pas',
-  PyEnvironment.AddOn in '..\src\AddOn\PyEnvironment.AddOn.pas';
+  PyEnvironment.AddOn in '..\src\AddOn\PyEnvironment.AddOn.pas',
+  PyEnvironment.Exception in '..\src\PyEnvironment.Exception.pas';
 
 end.
