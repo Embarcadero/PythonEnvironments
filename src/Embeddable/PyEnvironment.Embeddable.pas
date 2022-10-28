@@ -160,16 +160,15 @@ type
     property Scanner: TScanner read FScanner write SetScanner;
   end;
 
-  EEmbeddableNotFound = class(Exception);
-
 implementation
 
 uses
   System.IOUtils,
   System.Character,
   System.StrUtils,
-  PyEnvironment.Path,
   PyTools.ExecCmd,
+  PyEnvironment.Exception,
+  PyEnvironment.Path,
   PyEnvironment.Project
   {$IFDEF POSIX}
   , Posix.SysStat, Posix.Stdlib, Posix.String_, Posix.Errno
@@ -197,7 +196,7 @@ begin
   //Unzip the embeddable package into the target directory.
   LProgress := procedure(Sender: TObject; FileName: string; Header: TZipHeader; Position: Int64)
     begin
-      ACancelation.CheckCanceled();
+      ACancelation.CheckCancelled();
       DoZipProgressEvt(Sender, FileName, Header, Position);
     end;
 
@@ -364,7 +363,7 @@ end;
 
 procedure TPyCustomEmbeddableDistribution.LoadSettings(const ACancelation: ICancelation);
 begin
-  ACancelation.CheckCanceled();
+  ACancelation.CheckCancelled();
 
   Home := GetEnvironmentPath();
   SharedLibrary := FindSharedLibrary();
@@ -505,7 +504,8 @@ begin
     Exit;
 
   if not TDirectory.Exists(AEmbedabblesPath) then
-    raise Exception.Create('Directory not found.');
+    raise EDirectoryNotFoundException.CreateFmt('Directory "%s" not found.', [
+      AEmbedabblesPath]);
 
   //Look for version named subfolders
   if (FScanRule = TScanRule.srFolder) then begin

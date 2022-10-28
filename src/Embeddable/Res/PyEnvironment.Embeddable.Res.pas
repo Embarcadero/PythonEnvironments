@@ -121,7 +121,7 @@ begin
   try
     LResStream.SaveToFile(LEmbeddablePath);
 
-    ACancelation.CheckCanceled();
+    ACancelation.CheckCancelled();
 
     LDistribution := TPyCustomEmbeddableResDistribution(Distributions.Add());
     LDistribution.PythonVersion := PythonVersion;

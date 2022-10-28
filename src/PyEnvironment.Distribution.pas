@@ -77,7 +77,7 @@ end;
 
 function TPyDistribution.Setup(const ACancelation: ICancelation): boolean;
 begin
-  ACancelation.CheckCanceled();
+  ACancelation.CheckCancelled();
   Result := false;
 end;
 
