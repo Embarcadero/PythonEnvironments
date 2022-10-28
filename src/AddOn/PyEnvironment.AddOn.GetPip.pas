@@ -53,16 +53,16 @@ type
     property Triggers default [TPyEnvironmentaddOnTrigger.trAfterSetup];
   end;
 
-  EPipSetupFailed = class(Exception);
-
 implementation
 
 uses
   System.Types,
   System.IOUtils,
+  System.SyncObjs,
   PythonEngine,
   PyTools.ExecCmd,
-  PyTools.ExecCmd.Args;
+  PyTools.ExecCmd.Args,
+  PyEnvironment.Exception;
 
 {$R ..\..\resources\getpipscript.res}
 
@@ -127,9 +127,7 @@ var
   LPths: TArray<string>;
   LStrings: TStringList;
   I: Integer;
-  LOutput: string;
   LCmd: IExecCmd;
-  LExitCode: Integer;
 begin
   inherited;
   LPythonHome := GetPythonEngine().PythonHome;
@@ -152,7 +150,7 @@ begin
     end;
   end;
 
-  ACancelation.CheckCanceled();
+  ACancelation.CheckCancelled();
 
   //Run the get-pip.py script to enabled PIP
   LFileName := TPath.GetTempFileName();
@@ -167,16 +165,16 @@ begin
         LPythonHome,
         LExecutable,
         LSharedLibrary))
-      .Run(LOutput);
+      .Run([TRedirect.stderr]);
 
-    LExitCode := LCmd.SpinWait(function(): boolean begin
-      Result := ACancelation.IsCanceled;
+    TSpinWait.SpinUntil(function(): boolean begin
+      Result := not LCmd.IsAlive or ACancelation.IsCancelled;
     end);
 
-    if ACancelation.IsCanceled then
-      LCmd.Kill()
-    else if (LExitCode <> EXIT_SUCCESS) then
-      raise EPipSetupFailed.Create('PIP setup has failed.' + #13#10 + LOutput);
+    ACancelation.CheckCancelled();
+
+    if (LCmd.Wait() <> EXIT_SUCCESS) then
+      raise EPipSetupFailed.Create('PIP setup has failed.' + #13#10 + LCmd.StdErr.ReadAll());
   finally
     LResStream.Free();
   end;

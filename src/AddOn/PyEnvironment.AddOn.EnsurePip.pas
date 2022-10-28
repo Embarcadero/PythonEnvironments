@@ -53,15 +53,15 @@ type
     property Triggers default [TPyEnvironmentaddOnTrigger.trAfterSetup];
   end;
 
-  EPipSetupFailed = class(Exception);
-
 implementation
 
 uses
   System.IOUtils,
+  System.SyncObjs,
   PythonEngine,
   PyTools.ExecCmd,
-  PyTools.ExecCmd.Args;
+  PyTools.ExecCmd.Args,
+  PyEnvironment.Exception;
 
 { TPyEnvironmentAddOnEnsurePip }
 
@@ -119,9 +119,7 @@ var
   LPythonHome: string;
   LExecutable: string;
   LSharedLibrary: string;
-  LOutput: string;
   LCmd: IExecCmd;
-  LExitCode: Integer;
 begin
   inherited;
   LPythonHome := GetPythonEngine().PythonHome;
@@ -137,16 +135,16 @@ begin
       LPythonHome,
       LExecutable,
       LSharedLibrary))
-    .Run(LOutput);
+    .Run([TRedirect.stderr]);
 
-  LExitCode := LCmd.SpinWait(function(): boolean begin
-    Result := ACancelation.IsCanceled;
+  TSpinWait.SpinUntil(function(): boolean begin
+    Result := not LCmd.IsAlive or ACancelation.IsCancelled;
   end);
 
-  if ACancelation.IsCanceled then
-    LCmd.Kill()
-  else if (LExitCode <> EXIT_SUCCESS) then
-    raise EPipSetupFailed.Create('PIP setup has failed.' + #13#10 + LOutput);
+  ACancelation.CheckCancelled();
+
+  if (LCmd.Wait() <> EXIT_SUCCESS) then
+    raise EPipSetupFailed.Create('PIP setup has failed.' + #13#10 + LCmd.StdErr.ReadAll());
 end;
 
 end.
