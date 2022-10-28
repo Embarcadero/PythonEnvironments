@@ -60,6 +60,8 @@ type
 
     InstallsWhen: TPyPluginEvents;
     UninstallsWhen: TPyPluginEvents;
+    LoadsWhen: TPyPluginEvents;
+    UnloadsWhen: TPyPluginEvents;
   end;
 
   TPyEnvironmentBeforeSetup = procedure(Sender: TObject; const APythonVersion: string) of object;
@@ -78,8 +80,11 @@ type
     ['{11906029-81A6-4F94-ACDA-2DBB346C6E3A}']
     function GetInfo(): TPyPluginInfo;
     
-    function Install(const AArgs: TArray<TValue> = []): IAsyncResult;
-    function Uninstall(const AArgs: TArray<TValue> = []): IAsyncResult;
+    procedure InstallPlugin(const ACancelation: ICancelation);
+    procedure UninstallPlugin(const ACancelation: ICancelation);
+
+    procedure LoadPlugin(const ACancelation: ICancelation);
+    procedure UnloadPlugin(const ACancelation: ICancelation);
 
     function IsInstalled(): boolean;
     
@@ -89,12 +94,9 @@ type
   TPyCustomEnvironment = class(TComponent)
   protected type
     TEnvironmentTaskAsyncResult = class(TBaseAsyncResult)
-    public type
-      TScheduler = (Task, Queue, ForceQueue);
     private
       FAsyncTask: TProc<ICancelation>;
       FAsyncCallback: TAsyncCallback;
-      FScheduler: TScheduler;
       FCancelation: ICancelation;
     protected
       procedure Complete; override;
@@ -105,8 +107,6 @@ type
       constructor Create(const AContext: TObject;
         const AAsyncTask: TProc<ICancelation>;
         const AAsyncCallback: TAsyncCallback = nil);
-
-      property Scheduler: TScheduler read FScheduler write FScheduler;
     end;
 
     TAsyncFuncCallback<TResult> = reference to procedure (
@@ -127,7 +127,7 @@ type
     private
       FSetupResult: IAsyncResult;
     protected
-      procedure Schedule; override;
+      procedure AsyncDispatch; override;
     public
       constructor Create(const AContext: TObject;
         const ASetupResult: IAsyncResult;
@@ -171,18 +171,16 @@ type
       var Result: Boolean; const ACancelation: ICancelation);
     procedure DoBeforeDeactivate(const ACancelation: ICancelation);
     procedure DoAfterDeactivate(const ACancelation: ICancelation);
-    /// <summary>
-    ///   It won't be ready until setup, activate, run add-ons and install packages
-    /// </summary>
+    //It won't be ready until setup, activate, install and load plugins
     procedure DoInternalReady;
     procedure DoInternalError;
   protected
     procedure Loaded(); override;
     procedure Notification(AComponent: TComponent; AOperation: TOperation); override;
-    //Plugins install/uninstall
-    procedure InstallPlugins(const AEvent: TPyPluginEvent;
+    //Plugins install/uninstall/load/unload
+    procedure InstallOrLoadPlugins(const AEvent: TPyPluginEvent;
       const ACancelation: ICancelation); virtual;
-    procedure UninstallPlugins(const AEvent: TPyPluginEvent;
+    procedure UninstallOrUnloadPlugins(const AEvent: TPyPluginEvent;
       const ACancelation: ICancelation); virtual;
   protected
     procedure SetPythonVersion(const Value: string); virtual;
@@ -234,10 +232,9 @@ type
     function EndActivate(const ASyncResult: IAsyncResult): boolean;
     //Plugins
     procedure AddPlugin(const APlugin: IPyEnvironmentPlugin);
-    procedure RemovePlugion(const APlugin: IPyEnvironmentPlugin);
+    procedure RemovePlugin(const APlugin: IPyEnvironmentPlugin);
   public
     property Distributions: TPyDistributionCollection read FDistributions write SetDistributions;
-    
     property AutoLoad: boolean read FAutoLoad write FAutoLoad;
     property PythonVersion: string read FPythonVersion write SetPythonVersion;
     property PythonEngine: TPythonEngine read FPythonEngine write SetPythonEngine;
@@ -295,8 +292,7 @@ end;
 procedure TPyCustomEnvironment.Loaded;
 begin
   inherited;
-  if FAutoLoad and not (PythonVersion.IsEmpty) then
-    DoAutoLoad();
+  DoAutoLoad();
 end;
 
 procedure TPyCustomEnvironment.Notification(AComponent: TComponent;
@@ -430,56 +426,81 @@ procedure TPyCustomEnvironment.DoBeforeSetup(APythonVersion: string;
   const ACancelation: ICancelation);
 begin
   if Assigned(FBeforeSetup) then
-    FBeforeSetup(Self, APythonVersion);
+    TThread.Synchronize(nil, procedure() begin
+      FBeforeSetup(Self, APythonVersion);
+    end);
 end;
 
 procedure TPyCustomEnvironment.DoAfterSetup(APythonVersion: string;
   const ADistribution: TPyDistribution; const ACancelation: ICancelation);
 begin
   if Assigned(FAfterSetup) then
-    FAfterSetup(Self, APythonVersion);
+    TThread.Synchronize(nil, procedure() begin
+      FAfterSetup(Self, APythonVersion);
+    end);
 end;
 
 procedure TPyCustomEnvironment.DoBeforeActivate(APythonVersion: string;
   const ACancelation: ICancelation);
 begin
   if Assigned(FBeforeActivate) then
-    FBeforeActivate(Self, APythonVersion);
+    TThread.Synchronize(nil, procedure() begin
+      FBeforeActivate(Self, APythonVersion);
+    end);
 end;
 
 procedure TPyCustomEnvironment.DoAfterActivate(APythonVersion: string;
   const ADistribution: TPyDistribution; var Result: Boolean;
   const ACancelation: ICancelation);
+var
+  LResult: Boolean;
 begin
+  LResult := Result;
   if Assigned(FAfterActivate) then
-    FAfterActivate(Self, APythonVersion, Result);
+    TThread.Synchronize(nil, procedure() begin
+      FAfterActivate(Self, APythonVersion, LResult);
+    end);
+  Result := LResult;
 end;
 
 procedure TPyCustomEnvironment.DoBeforeDeactivate(
   const ACancelation: ICancelation);
 begin
   if Assigned(FBeforeDeactivate) then
-    FBeforeDeactivate(Self, FPythonEngine.RegVersion);
+    TThread.Synchronize(nil, procedure() begin
+      FBeforeDeactivate(Self, FPythonEngine.RegVersion);
+    end);
 end;
 
 procedure TPyCustomEnvironment.DoAfterDeactivate(
   const ACancelation: ICancelation);
 begin
   if Assigned(FAfterDeactivate) then
-    FAfterDeactivate(Self, FPythonEngine.RegVersion);
+    TThread.Synchronize(nil, procedure() begin
+      FAfterDeactivate(Self, FPythonEngine.RegVersion);
+    end);
 end;
 
 procedure TPyCustomEnvironment.DoInternalReady;
 begin
   if Assigned(FOnReady) then
-    FOnReady(Self, FPythonEngine.RegVersion);
+    TThread.Synchronize(nil, procedure() begin
+      FOnReady(Self, FPythonEngine.RegVersion);
+    end);
 end;
 
 procedure TPyCustomEnvironment.DoInternalError;
+var
+  LException: Exception;
 begin
-  if Assigned(FOnError) then
-    FOnError(Self, Exception(ExceptObject()))
-  else begin
+  if Assigned(FOnError) then begin
+    LException := Exception(ExceptObject());
+    TThread.Synchronize(nil, procedure() begin
+      FOnError(Self, LException);
+    end);
+
+    Abort();
+  end else begin
     try
       raise Exception(AcquireExceptionObject()) at ExceptAddr();
     finally
@@ -490,8 +511,9 @@ end;
 
 procedure TPyCustomEnvironment.DoAutoLoad;
 begin
-  if Setup(FPythonVersion) then
-    Activate(FPythonVersion);
+  if FAutoLoad and not (PythonVersion.IsEmpty) then
+    if Setup(FPythonVersion) then
+      Activate(FPythonVersion);
 end;
 
 function TPyCustomEnvironment.InternalSetup(const APythonVersion: string;
@@ -499,9 +521,13 @@ function TPyCustomEnvironment.InternalSetup(const APythonVersion: string;
 var
   LDistribution: TPyDistribution;
 begin
+  Assert(Assigned(ACancelation), 'Invalid argument "ACancelation".');
+
+  LDistribution := nil;
+
   DoBeforeSetup(APythonVersion, ACancelation);
   try
-    InstallPlugins(TPyPluginEvent.BeforeSetup, ACancelation);
+    InstallOrLoadPlugins(TPyPluginEvent.BeforeSetup, ACancelation);
 
     Prepare(ACancelation);
 
@@ -516,13 +542,17 @@ begin
     if not Result then
       Exit;
 
-    InstallPlugins(TPyPluginEvent.AfterSetup, ACancelation);
+    InstallOrLoadPlugins(TPyPluginEvent.AfterSetup, ACancelation);
   except
-    DoInternalError();
-    Exit(false);
+    on E: EAbort do
+      raise
+    else
+      DoInternalError();
   end;
 
   DoAfterSetup(APythonVersion, LDistribution, ACancelation);
+
+  Result := true;
 end;
 
 function TPyCustomEnvironment.InternalActivate(const APythonVersion: string;
@@ -530,7 +560,18 @@ function TPyCustomEnvironment.InternalActivate(const APythonVersion: string;
 var
   LDistribution: TPyDistribution;
 begin
+  Assert(Assigned(ACancelation), 'Invalid argument "ACancelation".');
+
   DoBeforeActivate(APythonVersion, ACancelation);
+
+  try
+    InstallOrLoadPlugins(TPyPluginEvent.BeforeActivate, ACancelation);
+  except
+    on E: EAbort do
+      raise
+    else
+      DoInternalError();
+  end;
 
   //An engine is required
   if not Assigned(FPythonEngine) then
@@ -546,27 +587,36 @@ begin
     Exit(false);
 
   try
-    InstallPlugins(TPyPluginEvent.BeforeActivate, ACancelation);
-
     FPythonEngine.UseLastKnownVersion := false;
     FPythonEngine.PythonHome := TPyEnvironmentPath.ResolvePath(LDistribution.Home);
     FPythonEngine.ProgramName := TPyEnvironmentPath.ResolvePath(LDistribution.Executable);
     FPythonEngine.DllPath := TPath.GetDirectoryName(TPyEnvironmentPath.ResolvePath(LDistribution.SharedLibrary));
     FPythonEngine.DllName := TPath.GetFileName(LDistribution.SharedLibrary);
-    FPythonEngine.LoadDll();
+    TThread.Synchronize(nil, procedure() begin
+      FPythonEngine.LoadDll();
+    end);
 
     Result := FPythonEngine.IsHandleValid();
 
     if not Result then
       Exit;
-
-    InstallPlugins(TPyPluginEvent.AfterActivate, ACancelation);
   except
-    DoInternalError();
-    Exit(false);
+    on E: EAbort do
+      raise
+    else
+      DoInternalError();
   end;
 
   DoAfterActivate(APythonVersion, LDistribution, Result, ACancelation);
+
+  try
+    InstallOrLoadPlugins(TPyPluginEvent.AfterActivate, ACancelation);
+  except
+    on E: EAbort do
+      raise
+    else
+      DoInternalError();
+  end;
 
   DoInternalReady();
 end;
@@ -574,6 +624,8 @@ end;
 procedure TPyCustomEnvironment.InternalDeactivate(
   const ACancelation: ICancelation);
 begin
+  Assert(Assigned(ACancelation), 'Invalid argument "ACancelation".');
+
   DoBeforeDeactivate(ACancelation);
 
   //We need a working engine
@@ -581,7 +633,7 @@ begin
     Exit();
 
   try
-    InstallPlugins(TPyPluginEvent.BeforeDeactivate, ACancelation);
+    InstallOrLoadPlugins(TPyPluginEvent.BeforeDeactivate, ACancelation);
 
     FPythonEngine.UnloadDll();
     FPythonEngine.PythonHome := String.Empty;
@@ -589,10 +641,12 @@ begin
     FPythonEngine.DllPath := String.Empty;
     FPythonEngine.DllName := String.Empty;
 
-    InstallPlugins(TPyPluginEvent.AfterDeactivate, ACancelation);
+    InstallOrLoadPlugins(TPyPluginEvent.AfterDeactivate, ACancelation);
   except
-    DoInternalError();
-    Exit;
+    on E: EAbort do
+      raise
+    else
+      DoInternalError();
   end;
 
   DoAfterDeactivate(ACancelation);
@@ -609,49 +663,42 @@ begin
   FPlugins.Add(APlugin);
 end;
 
-procedure TPyCustomEnvironment.RemovePlugion(const APlugin: IPyEnvironmentPlugin);
+procedure TPyCustomEnvironment.RemovePlugin(const APlugin: IPyEnvironmentPlugin);
 begin
   FPlugins.Remove(APlugin);
 end;
 
-procedure TPyCustomEnvironment.InstallPlugins(const AEvent: TPyPluginEvent;
+procedure TPyCustomEnvironment.InstallOrLoadPlugins(const AEvent: TPyPluginEvent;
   const ACancelation: ICancelation);
 var
   LPlugin: IPyEnvironmentPlugin;
-  LAsyncInstall: IAsyncResult;
 begin
   for LPlugin in FPlugins do begin
-    if not (AEvent in LPlugin.Info.InstallsWhen) then
-      Continue;
+    if (AEvent in LPlugin.Info.InstallsWhen) and not LPlugin.IsInstalled() then begin
+      if Assigned(FOnPluginInstall) then
+        TThread.Synchronize(nil, procedure() begin
+          FOnPluginInstall(LPlugin as TObject, LPlugin.Info);
+        end);
 
-    if LPlugin.IsInstalled() then
-      Continue;
-
-    if ACancelation.IsCanceled() then
-      Break;
-
-    if Assigned(FOnPluginInstall) then
-      FOnPluginInstall(LPlugin as TObject, LPlugin.Info);
-
-    LAsyncInstall := LPlugin.Install();
-    while (LAsyncInstall.AsyncWaitEvent.WaitFor(100) <> TWaitResult.wrSignaled) 
-      and not LAsyncInstall.IsCancelled do begin
-        if ACancelation.IsCanceled() then
-          LAsyncInstall.Cancel()
+      LPlugin.InstallPlugin(ACancelation);
     end;
 
-    //Catches plugin exception
-    (LAsyncInstall as TBaseAsyncResult).WaitForCompletion();
+    ACancelation.CheckCancelled();
+
+    if (AEvent in LPlugin.Info.LoadsWhen) and LPlugin.IsInstalled() then
+      LPlugin.LoadPlugin(ACancelation);
   end;
 end;
 
-procedure TPyCustomEnvironment.UninstallPlugins(const AEvent: TPyPluginEvent;
+procedure TPyCustomEnvironment.UninstallOrUnloadPlugins(const AEvent: TPyPluginEvent;
   const ACancelation: ICancelation);
 var
   LPlugin: IPyEnvironmentPlugin;
-  LAsyncUninstall: IAsyncResult;
 begin
   for LPlugin in FPlugins do begin
+    if (AEvent in LPlugin.Info.UnloadsWhen) and LPlugin.IsInstalled() then
+      LPlugin.UnloadPlugin(ACancelation);
+
     if not (AEvent in LPlugin.Info.UninstallsWhen) then
       Continue;
 
@@ -659,17 +706,11 @@ begin
       Continue;
 
     if Assigned(FOnPluginUninstall) then
-      FOnPluginUninstall(LPlugin as TObject, LPlugin.Info);
+      TThread.Synchronize(nil, procedure() begin
+        FOnPluginUninstall(LPlugin as TObject, LPlugin.Info);
+      end);
 
-    LAsyncUninstall := LPlugin.Uninstall();
-    while (LAsyncUninstall.AsyncWaitEvent.WaitFor(100) <> TWaitResult.wrSignaled)
-      and not LAsyncUninstall.IsCancelled do begin
-      if ACancelation.IsCanceled() then
-        LAsyncUninstall.Cancel();
-    end;
-
-    //Catches plugin exception
-    (LAsyncUninstall as TBaseAsyncResult).WaitForCompletion();
+    LPlugin.UninstallPlugin(ACancelation);
   end;
 end;
 
@@ -703,7 +744,6 @@ begin
   inherited Create(AContext);
   FAsyncTask := AAsyncTask;
   FAsyncCallback := AAsyncCallback;
-  FScheduler := TScheduler.Task;
   FCancelation := TCancelation.Create();
 end;
 
@@ -728,11 +768,7 @@ end;
 
 procedure TPyCustomEnvironment.TEnvironmentTaskAsyncResult.Schedule;
 begin
-  case FScheduler of
-    Task: TTask.Run(DoAsyncDispatch);
-    Queue: TThread.Queue(TThread.Current, DoAsyncDispatch);
-    ForceQueue: TThread.ForceQueue(TThread.Current, DoAsyncDispatch);
-  end;
+  TTask.Run(DoAsyncDispatch);
 end;
 
 { TPyCustomEnvironment.TEnvironmentTaskAsyncResult<TResult> }
@@ -761,29 +797,18 @@ end;
 
 { TPyCustomEnvironment.TAsyncActivate }
 
+procedure TPyCustomEnvironment.TAsyncActivate.AsyncDispatch;
+begin
+  if (FSetupResult as TAsyncSetup).GetRetVal() then
+    inherited;
+end;
+
 constructor TPyCustomEnvironment.TAsyncActivate.Create(const AContext: TObject;
   const ASetupResult: IAsyncResult; const AAsyncTask: TFunc<ICancelation, boolean>;
   const AAsyncFuncCallback: TAsyncFuncCallback<boolean>);
 begin
   inherited Create(AContext, AAsyncTask, AAsyncFuncCallback);
-
-  if Assigned(ASetupResult) then
-    Scheduler := TScheduler.Queue
-  else
-    Scheduler := TScheduler.ForceQueue;
-
   FSetupResult := ASetupResult;
-end;
-
-procedure TPyCustomEnvironment.TAsyncActivate.Schedule;
-begin
-  if Assigned(FSetupResult) then begin
-    TTask.Run(procedure() begin
-      if (FSetupResult as TAsyncSetup).GetRetVal() then
-        inherited;
-    end);
-  end else
-    inherited;
 end;
 
 end.
