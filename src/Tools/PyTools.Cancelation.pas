@@ -41,17 +41,19 @@ type
   ICancelation = interface
     ['{749AF528-3209-4F5F-9CAA-58048285C275}']
     procedure Cancel();
-    procedure CheckCanceled();
-    function IsCanceled(): boolean;
+    procedure CheckCancelled();
+    function GetCancelled(): boolean;
+
+    property IsCancelled: boolean read GetCancelled;
   end;
 
   TCancelation = class(TInterfacedObject, ICancelation)
   private
-    FCanceled: boolean;
+    FCancelled: boolean;
+    function GetCancelled(): boolean;
   public
     procedure Cancel();
-    procedure CheckCanceled();
-    function IsCanceled(): boolean;
+    procedure CheckCancelled();
   end;
 
 implementation
@@ -60,17 +62,17 @@ implementation
 
 procedure TCancelation.Cancel;
 begin
-  FCanceled := true;
+  FCancelled := true;
 end;
 
-function TCancelation.IsCanceled: boolean;
+function TCancelation.GetCancelled: boolean;
 begin
-  Result := FCanceled;
+  Result := FCancelled;
 end;
 
-procedure TCancelation.CheckCanceled;
+procedure TCancelation.CheckCancelled;
 begin
-  if FCanceled then
+  if FCancelled then
     raise EOperationCancelled.CreateRes(@SOperationCancelled);
 end;
 
