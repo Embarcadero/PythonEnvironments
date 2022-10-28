@@ -71,13 +71,12 @@ type
     property FilePath: string read FFilePath write FFilePath;
   end;
 
-  EInvalidFileStructure = class(Exception);
-
 implementation
 
 uses
   System.IOUtils,
   PythonEngine,
+  PyEnvironment.Exception,
   PyEnvironment.Path;
 
 { TPyLocalDistribution }
@@ -143,7 +142,7 @@ begin
     var
       LDistribution: TPyLocalDistribution;
     begin
-      ACancelation.CheckCanceled();
+      ACancelation.CheckCancelled();
 
       LDistribution := TPyLocalDistribution(Distributions.Add());
       LDistribution.PythonVersion := APythonVersion;
