@@ -177,12 +177,12 @@ uses
 
 type
   TZipEventToAnonMethodAdapter = class
-  private type
-    TAdapter = TProc<TObject, string, TZipHeader, Int64>;
+  public type
+    TAdapterProc = TProc<TObject, string, TZipHeader, Int64>;
   private
-    FAdapter: TAdapter;
+    FAdapterProc: TAdapterProc;
   public
-    constructor Create(const AAdapter: TAdapter);
+    constructor Create(const AAdapterProc: TAdapterProc);
     procedure Evt(Sender: TObject; FileName: string; Header: TZipHeader; Position: Int64);
   end;
 
@@ -191,9 +191,8 @@ type
 procedure TPyCustomEmbeddableDistribution.CreateEnvironment(const ACancelation: ICancelation);
 var
   LAdapter: TZipEventToAnonMethodAdapter;
-  LProgress: TZipEventToAnonMethodAdapter.TAdapter;
+  LProgress: TZipEventToAnonMethodAdapter.TAdapterProc;
 begin
-  //Unzip the embeddable package into the target directory.
   LProgress := procedure(Sender: TObject; FileName: string; Header: TZipHeader; Position: Int64)
     begin
       ACancelation.CheckCancelled();
@@ -537,15 +536,15 @@ end;
 
 { TZipEventToAnonMethodAdapter }
 
-constructor TZipEventToAnonMethodAdapter.Create(const AAdapter: TAdapter);
+constructor TZipEventToAnonMethodAdapter.Create(const AAdapterProc: TAdapterProc);
 begin
-  FAdapter := AAdapter;
+  FAdapterProc := AAdapterProc;
 end;
 
 procedure TZipEventToAnonMethodAdapter.Evt(Sender: TObject; FileName: string;
   Header: TZipHeader; Position: Int64);
 begin
-  FAdapter(Sender, FileName, Header, Position);
+  FAdapterProc(Sender, FileName, Header, Position);
 end;
 
 end.
