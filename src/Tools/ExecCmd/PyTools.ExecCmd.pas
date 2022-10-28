@@ -36,22 +36,43 @@ uses
   System.SysUtils;
 
 type
-  TRedirect = (stdin, stdout);
+  TRedirect = (stdin, stdout, stderr);
   TRedirections = set of TRedirect;
-  TReader = TFunc<string>;
-  TWriter = TProc<string>;
+
+  IStdReader = interface
+    ['{D199DC97-A11B-4284-8F66-2E3C5301C91A}']
+    function ReadNext: string;
+    function ReadAll(): string; overload;
+    function ReadAll(out AValue: string; const ATimeout: cardinal): boolean; overload;
+  end;
+
+  IStdWriter = interface
+    ['{47015ED5-97DF-4CD3-8251-FADA71DB4A4A}']
+    procedure Write(const AValue: string);
+  end;
 
   IExecCmd = interface
     ['{FDCA9BAA-D412-4B48-96C2-0F08057FD6ED}']
+    function GetStdOut(): IStdReader;
+    function GetStdIn(): IStdWriter;
+    function GetStdErr(): IStdReader;
+    function GetOutput(): string;
+
     function GetExitCode: Integer;
     function GetIsAlive: boolean;
 
     function Run(): IExecCmd; overload;
     function Run(out AOutput: string): IExecCmd; overload;
-    function Run(out AReader: TReader; out AWriter: TWriter; const ARedirections: TRedirections): IExecCmd; overload;
+    function Run(const ARedirections: TRedirections): IExecCmd; overload;
+
     procedure Kill();
-    function Wait(): Integer;
-    function SpinWait(const ACondition: TFunc<boolean>; const ATimeOut: cardinal = INFINITE): Integer;
+    function Wait(): Integer; overload;
+
+    property StdOut: IStdReader read GetStdOut;
+    property StdIn: IStdWriter read GetStdIn;
+    property StdErr: IStdReader read GetStdErr;
+
+    property Output: string read GetOutput;
 
     property IsAlive: boolean read GetIsAlive;
     property ExitCode: Integer read GetExitCode;
@@ -63,8 +84,6 @@ type
     class function Cmd(const ACmd: string; const AArg: TArray<string>): IExecCmd; overload;
   end;
 
-  EExecCmd = class(Exception);
-
 const
   EXIT_SUCCESS  = 0;
   EXIT_FAILURE = 1;
@@ -72,6 +91,7 @@ const
 implementation
 
 uses
+  PyTools.Exception,
   PyTools.ExecCmd.Platform;
 
 { TExecCmdService }
