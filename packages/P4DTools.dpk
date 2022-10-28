@@ -40,6 +40,7 @@ contains
   PyTools.Notification.Protocol.Local in '..\src\Tools\Notification\Protocol\PyTools.Notification.Protocol.Local.pas',
   PyTools.ExecCmd.Args in '..\src\Tools\ExecCmd\PyTools.ExecCmd.Args.pas',
   PyTools.ExecCmd in '..\src\Tools\ExecCmd\PyTools.ExecCmd.pas',
-  PyTools.ExecCmd.Platform in '..\src\Tools\ExecCmd\PyTools.ExecCmd.Platform.pas';
+  PyTools.ExecCmd.Platform in '..\src\Tools\ExecCmd\PyTools.ExecCmd.Platform.pas',
+  PyTools.Exception in '..\src\Tools\PyTools.Exception.pas';
 
 end.
