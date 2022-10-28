@@ -55,7 +55,7 @@ type
   TPyEnvironmentAddOnExecute = procedure(const ASender: TObject) of object;
 
   TPyEnvironmentAddOnExecuteError = procedure(const ASender: TObject;
-    const AException: Exception) of object;
+    const AException: Exception; var AAbort: boolean) of object;
 
   TPyEnvironmentCustomAddOn = class(TComponent, IPyEnvironmentPlugin)
   private type
@@ -76,9 +76,13 @@ type
     FTriggers: TPyEnvironmentaddOnTriggers;
     FOnExecuteError: TPyEnvironmentAddOnExecuteError;
     procedure SetEnvironment(const Value: TPyCustomEnvironment);
+    procedure DoOnExecute();
+    procedure DoInternalError();
     //IPlugin implementation
-    function Install(const AArgs: TArray<TValue> = []): IAsyncResult;
-    function Uninstall(const AArgs: TArray<TValue> = []): IAsyncResult;
+    procedure InstallPlugin(const ACancelation: ICancelation);
+    procedure UninstallPlugin(const ACancelation: ICancelation);
+    procedure LoadPlugin(const ACancelation: ICancelation);
+    procedure UnloadPlugin(const ACancelation: ICancelation);
   protected
     procedure Notification(AComponent: TComponent; AOperation: TOperation); override;
   protected
@@ -118,7 +122,7 @@ begin
   if Assigned(FEnvironment) then begin
     FEnvironment.RemoveFreeNotification(Self);
     if not (csDesigning in ComponentState) then
-      FEnvironment.RemovePlugion(Self);
+      FEnvironment.RemovePlugin(Self);
   end;
 
   FEnvironment := Value;
@@ -144,36 +148,64 @@ begin
   inherited;
 end;
 
-procedure TPyEnvironmentCustomAddOn.Execute(const ACancelation: ICancelation);
+procedure TPyEnvironmentCustomAddOn.DoInternalError;
+var
+  LAbort: boolean;
+  LException: Exception;
 begin
-  Assert(Assigned(ACancelation), 'Invalid argument "ACancelation".');
+  if Assigned(FOnExecuteError) then begin
+    LException := Exception(ExceptObject());
+    TThread.Synchronize(nil, procedure() begin
+      FOnExecuteError(Self, LException, LAbort);
+    end);
 
-  if Assigned(FOnExecute) then
-    FOnExecute(Self);
-
-  try
-    InternalExecute(ACancelation);
-  except
-    on E: Exception do begin
-      if Assigned(FOnExecuteError) then
-        FOnExecuteError(Self, E)
-      else
-        raise;
+    if LAbort then
+      Abort();
+  end else begin
+    try
+      raise Exception(AcquireExceptionObject()) at ExceptAddr();
+    finally
+      ReleaseExceptionObject();
     end;
   end;
 end;
 
-function TPyEnvironmentCustomAddOn.Install(
-  const AArgs: TArray<TValue>): IAsyncResult;
+procedure TPyEnvironmentCustomAddOn.DoOnExecute;
 begin
-  Result := TPyEnvironmentCustomAddonAsyncResult.Create(Self,
-    procedure(ACancelation: ICancelation) begin
-      Execute(ACancelation);
-    end).Invoke();
+  if Assigned(FOnExecute) then
+    TThread.Synchronize(nil, procedure() begin
+      FOnExecute(Self);
+    end);
 end;
 
-function TPyEnvironmentCustomAddOn.Uninstall(
-  const AArgs: TArray<TValue>): IAsyncResult;
+procedure TPyEnvironmentCustomAddOn.Execute(const ACancelation: ICancelation);
+begin
+  Assert(Assigned(ACancelation), 'Invalid argument "ACancelation".');
+
+  DoOnExecute();
+  try
+    InternalExecute(ACancelation);
+  except
+    DoInternalError();
+  end;
+end;
+
+procedure TPyEnvironmentCustomAddOn.InstallPlugin(const ACancelation: ICancelation);
+begin
+  Execute(ACancelation);
+end;
+
+procedure TPyEnvironmentCustomAddOn.UninstallPlugin(const ACancelation: ICancelation);
+begin
+  //
+end;
+
+procedure TPyEnvironmentCustomAddOn.LoadPlugin(const ACancelation: ICancelation);
+begin
+  //
+end;
+
+procedure TPyEnvironmentCustomAddOn.UnloadPlugin(const ACancelation: ICancelation);
 begin
   //
 end;
