@@ -33,8 +33,10 @@ unit PyEnvironment.Project.IDE.ManagerMenu;
 interface
 
 uses
-  System.Classes, System.SysUtils,
+  System.Classes,
+  System.SysUtils,
   ToolsAPI,
+  DesignIntf,
   PyEnvironment.Project.IDE.Deploy,
   PyEnvironment.Project.IDE.Types;
 
@@ -118,6 +120,8 @@ type
       const AEnabled: Boolean);
     procedure SetPythonVersion(const AProject: IOTAProject;
       const AEnabled: Boolean);
+    procedure SetDesginTimeCompsPythonVersion(const AProject: IOTAProject;
+      const APythonVersion: string);
   strict protected
     function GetEnabled: Boolean; override;
     function GetChecked: boolean; override;
@@ -133,6 +137,34 @@ uses
   System.IOUtils,
   PyEnvironment.Project,
   PyEnvironment.Project.IDE.Helper;
+
+function GetActiveFormEditor: IOTAFormEditor;
+var
+  LIOTAModule: IOTAModule;
+  LIOTAEditor: IOTAEditor;
+  I: Integer;
+begin
+  LIOTAModule := (BorlandIDEServices as IOTAModuleServices).CurrentModule();
+  if Assigned(LIOTAModule) then begin
+    for I := 0 to LIOTAModule.GetModuleFileCount - 1 do begin
+      LIOTAEditor := LIOTAModule.GetModuleFileEditor(I);
+      if Supports(LIOTAEditor, IOTAFormEditor, Result) then
+        Exit;
+    end;
+  end;
+  Result := nil;
+end;
+
+function GetActiveFormDesigner: IDesigner;
+var
+  LIOTAFormEditor: IOTAFormEditor;
+begin
+  LIOTAFormEditor := GetActiveFormEditor();
+  if Assigned(LIOTAFormEditor) then
+    Result := (LIOTAFormEditor as INTAFormEditor).FormDesigner
+  else
+    Result := nil;
+end;
 
 { TPyEnvironmentProjectManagerMenu }
 
@@ -329,6 +361,8 @@ begin
         TPyEnvironmentProjectHelper.CurrentPythonVersion[FProject] := FPythonVersion;
         //Add new version files
         SetPythonVersion(FProject, true);
+        //Update Python version in Design-time components
+        SetDesginTimeCompsPythonVersion(FProject, FPythonVersion);
       end;
     end, String.Empty, AParent.GetVerb());
 end;
@@ -363,6 +397,30 @@ begin
         if LDeployFile.CopyToOutput then
           TPyEnvironmentOTAHelper.TryRemoveOutputFile(
             AProject, APlatform, AConfig, TPath.GetFileName(LDeployFile.LocalFileName));
+      end;
+    end;
+  end;
+end;
+
+procedure TPyEnvironmentProjectManagerMenuPythonEnvironmentVersionSubItem.SetDesginTimeCompsPythonVersion(
+  const AProject: IOTAProject; const APythonVersion: string);
+var
+  LIOTAEditor: IOTAFormEditor;
+  LIOTARootComponent: IOTAComponent;
+  I: Integer;
+  LIOTAComponent: IOTAComponent;
+  LDesigner: IDesigner;
+begin
+  LIOTAEditor := GetActiveFormEditor();
+  if Assigned(LIOTAEditor) then begin
+    LIOTARootComponent := LIOTAEditor.GetRootComponent();
+    for I := 0 to LIOTARootComponent.GetComponentCount() - 1 do begin
+      LIOTAComponent := LIOTARootComponent.GetComponent(I);
+      if LIOTAComponent.GetComponentType().StartsWith('TPyEmbeddedEnvironment') then begin
+        LDesigner := GetActiveFormDesigner();
+        if Assigned(LDesigner) then
+          //This will trigger the component editor and apply Python settings
+          LDesigner.SelectComponent(TPersistent(LIOTAComponent.GetComponentHandle()));
       end;
     end;
   end;
