@@ -49,6 +49,7 @@ object Form1: TForm1
     OnReady = PyEmbeddedEnvironment1Ready
     AutoLoad = False
     SynchronizeEvents = False
+    PythonVersion = '3.9'
     PythonEngine = PythonEngine1
     Distributions = <>
     Scanner.AutoScan = True
