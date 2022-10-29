@@ -36,9 +36,13 @@ uses
   System.SysUtils, Classes, DesignIntf, DesignEditors;
 
 type
+  TPyEnvironmentEmbeddedEditor = class(TComponentEditor)
+  public
+    constructor Create(AComponent: TComponent; ADesigner: IDesigner); override;
+  end;
+
   TPyEnvironmentEmbeddedPythonVersionProperty = class (TStringProperty)
   public
-    function GetValue: string; override;
     procedure SetValue(const Value: string); override;
   end;
 
@@ -53,24 +57,11 @@ uses
 
 procedure Register();
 begin
+  RegisterComponentEditor(TPyEmbeddedEnvironment, TPyEnvironmentEmbeddedEditor);
   RegisterPropertyEditor(TypeInfo(string), TPyEmbeddedEnvironment, 'PythonVersion', TPyEnvironmentEmbeddedPythonVersionProperty);
 end;
 
 { TPyEnvironmentEmbeddedPythonVersionProperty }
-
-function TPyEnvironmentEmbeddedPythonVersionProperty.GetValue: string;
-var
-  LProject: IOTAProject;
-begin
-  LProject := GetActiveProject();
-  if Assigned(LProject) then begin
-    if TPyEnvironmentProjectHelper.IsPyEnvironmentDefined[LProject] then
-      Result := TPyEnvironmentProjectHelper.CurrentPythonVersion[LProject]
-    else
-      Result := inherited;
-  end else
-    Result := inherited;
-end;
 
 procedure TPyEnvironmentEmbeddedPythonVersionProperty.SetValue(
   const Value: string);
@@ -78,11 +69,30 @@ var
   LProject: IOTAProject;
 begin
   LProject := GetActiveProject();
-  if Assigned(LProject) then begin
-    if not TPyEnvironmentProjectHelper.IsPyEnvironmentDefined[LProject] then
-      inherited;
+  if Assigned(LProject) and TPyEnvironmentProjectHelper.IsPyEnvironmentDefined[LProject] then begin
+    inherited SetValue(TPyEnvironmentProjectHelper.CurrentPythonVersion[LProject])
   end else
     inherited;
+end;
+
+{ TPyEnvironmentEmbeddedEditor }
+
+constructor TPyEnvironmentEmbeddedEditor.Create(AComponent: TComponent;
+  ADesigner: IDesigner);
+var
+  LProject: IOTAProject;
+  LEnvironment: TPyEmbeddedEnvironment;
+begin
+  inherited;
+  LProject := GetActiveProject();
+  if TPyEnvironmentProjectHelper.IsPyEnvironmentDefined[LProject] then begin
+    LEnvironment := (Self.Component as TPyEmbeddedEnvironment);
+    LEnvironment.PythonVersion := TPyEnvironmentProjectHelper.CurrentPythonVersion[LProject];
+    LEnvironment.Scanner.AutoScan := true;
+    LEnvironment.Scanner.ScanRule := TPyEmbeddedEnvironment.TScanRule.srFileName;
+    LEnvironment.Scanner.DeleteEmbeddable := true;
+    Designer.Modified();
+  end;
 end;
 
 end.
