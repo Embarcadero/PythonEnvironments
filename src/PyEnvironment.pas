@@ -352,10 +352,10 @@ end;
 
 procedure TPyCustomEnvironment.DoAutoLoad;
 begin
-  if FAutoLoad and not (PythonVersion.IsEmpty) then begin
-    if Setup(FPythonVersion) then
-      Activate(FPythonVersion);
-  end;
+  if not (csDesigning in ComponentState) and FAutoLoad
+    and not (PythonVersion.IsEmpty) then
+      if Setup(FPythonVersion) then
+        Activate(FPythonVersion);
 end;
 
 function TPyCustomEnvironment.Setup(APythonVersion: string): boolean;
