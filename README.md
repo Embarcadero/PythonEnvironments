@@ -1,8 +1,10 @@
 # PythonEnviroments
 
-After more than 2 decades of introducing [Python4Delphi (P4D)](https://github.com/Embarcadero/Python4Delphi), is we are trying to solve the real essense of why P4D project is started with the **PythonEnvironments** project. Intially P4D was designed to have a scripting capability in Delphi using Python. Python is a great programming language to prototype and experiment on an idea using short scripts. One of the reasons that community didn't adopt to include Python into their Delphi Applications was it was not an easy process to do so.
+After more than 2 decades of introducing [Python4Delphi (P4D)](https://github.com/Embarcadero/Python4Delphi), we are trying to solve the real essense of why P4D project is started with the **PythonEnvironments** project. Intially P4D was designed to have a scripting capability in Delphi using Python. Python is a great programming language choice to prototype and experiment on an idea using short scripts. One of the reasons that community didn't adopt to include Python into their Delphi applications was it was not an easy process to do so.
 
 **PythonEnvironments** provides a set of Design time Components to embed a desirable Python Environment into your Delphi application using the readily-available Python embeddables very easily.
+
+Please check out the [samples](https://github.com/Embarcadero/PythonEnviroments/tree/main/samples) section to Get Started on **PythonEnvironments**.
 
 Curretly we're providing support for Python versions - `3.7`, `3.8`, `3.9` and `3.10`. Support for `Python 3.11` is coming soon.
 
