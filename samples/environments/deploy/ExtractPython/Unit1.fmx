@@ -59,6 +59,7 @@ object Form1: TForm1
     OnError = PyEmbeddedEnvironment1Error
     OnReady = PyEmbeddedEnvironment1Ready
     AutoLoad = False
+    PythonVersion = '3.9'
     PythonEngine = PythonEngine1
     OnZipProgress = PyEmbeddedEnvironment1ZipProgress
     Distributions = <>

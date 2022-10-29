@@ -2187,6 +2187,8 @@ object Form1: TForm1
       StyleLookup = ''
       TabOrder = 0
       Text = 'Run'
+      ExplicitSize.cx = 41.000000000000000000
+      ExplicitSize.cy = 26.000000000000000000
       object Memo1: TMemo
         Touch.InteractiveGestures = [Pan, LongTap, DoubleTap]
         DataDetectorTypes = []
@@ -2218,6 +2220,7 @@ object Form1: TForm1
     OnReady = PyEmbeddedEnvironment1Ready
     OnPluginInstall = PyEmbeddedEnvironment1PluginInstall
     AutoLoad = True
+    PythonVersion = '3.9'
     PythonEngine = PythonEngine1
     Distributions = <>
     Scanner.AutoScan = True
