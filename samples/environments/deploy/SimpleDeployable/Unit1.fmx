@@ -1003,9 +1003,6 @@ object Form1: TForm1
               9D91A0236CEE4C8EE9C26C6EFD1A30C22B4DA6649BDECD48E61FE9B6179B526F
               1F933BFA87BE5814B3FC7CCB2EB7FC945EE7B1B94D33C313DDC0FF071C472B26
               2E1568DD0000000049454E44AE426082}
-            FileName = 
-              'D:\dev\projects\pythonenviroments\samples\environments\deploy\Si' +
-              'mpleDeployable\environment_variable.png'
           end>
         Align = Client
         Size.Width = 567.000000000000000000
@@ -1619,9 +1616,6 @@ object Form1: TForm1
               138A05218490BC502C082184E48562410821242F140B42082179A158104208C9
               0BC5821042485EF804B7CBA8F413DC723C42C8DC45DA9BDD7B62F8FF0146C780
               7E72660CD10000000049454E44AE426082}
-            FileName = 
-              'D:\dev\projects\pythonenviroments\samples\environments\deploy\Si' +
-              'mpleDeployable\enable_python.png'
           end>
         Align = Client
         Size.Width = 567.000000000000000000
@@ -2166,9 +2160,6 @@ object Form1: TForm1
               BADA08997A94B4AB8D1042C8E483C2430821C453E86A238410E229B478082184
               780A8587104288A75078082184780A8587104288A75078082184780A85871042
               888700FF3F3FF5829A5880981F0000000049454E44AE426082}
-            FileName = 
-              'D:\dev\projects\pythonenviroments\samples\environments\deploy\Si' +
-              'mpleDeployable\scanner_options.png'
           end>
         Align = Client
         Size.Width = 567.000000000000000000
