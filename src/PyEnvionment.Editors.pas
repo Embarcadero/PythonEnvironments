@@ -82,16 +82,24 @@ constructor TPyEnvironmentEmbeddedEditor.Create(AComponent: TComponent;
 var
   LProject: IOTAProject;
   LEnvironment: TPyEmbeddedEnvironment;
+  LUpdateNeeded: Boolean;
 begin
   inherited;
   LProject := GetActiveProject();
   if TPyEnvironmentProjectHelper.IsPyEnvironmentDefined[LProject] then begin
     LEnvironment := (Self.Component as TPyEmbeddedEnvironment);
+    LUpdateNeeded := false;
+    if (LEnvironment.PythonVersion <> TPyEnvironmentProjectHelper.CurrentPythonVersion[LProject])
+      or LEnvironment.Scanner.AutoScan = false
+      or (LEnvironment.Scanner.ScanRule <> TPyEmbeddedEnvironment.TScanRule.srFileName) then
+        LUpdateNeeded := true;
+
     LEnvironment.PythonVersion := TPyEnvironmentProjectHelper.CurrentPythonVersion[LProject];
     LEnvironment.Scanner.AutoScan := true;
     LEnvironment.Scanner.ScanRule := TPyEmbeddedEnvironment.TScanRule.srFileName;
-    LEnvironment.Scanner.DeleteEmbeddable := true;
-    Designer.Modified();
+
+    if LUpdateNeeded then
+      Designer.Modified();
   end;
 end;
 
