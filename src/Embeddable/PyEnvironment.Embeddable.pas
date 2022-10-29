@@ -122,8 +122,9 @@ type
 
   [ComponentPlatforms(pidAllPlatforms)]
   TPyEmbeddedEnvironment = class(TPyCustomEmbeddedEnvironment)
-  private type
+  public type
     TScanRule = (srFolder, srFileName);
+  private type
     TScanner = class(TPersistent)
     private
       FAutoScan: boolean;
@@ -168,8 +169,7 @@ uses
   System.StrUtils,
   PyTools.ExecCmd,
   PyEnvironment.Exception,
-  PyEnvironment.Path,
-  PyEnvironment.Project
+  PyEnvironment.Path
   {$IFDEF POSIX}
   , Posix.SysStat, Posix.Stdlib, Posix.String_, Posix.Errno
   {$ENDIF}
@@ -416,19 +416,11 @@ constructor TPyEmbeddedEnvironment.Create(AOwner: TComponent);
 begin
   inherited;
   FScanner := TScanner.Create();
-
+  FScanner.ScanRule := TScanRule.srFolder;
   if not (csDesigning in ComponentState) then begin
     FScanner.EnvironmentPath := TPyEnvironmentPath.CreateEnvironmentPath();
     FScanner.EmbeddablesPath := TPyEnvironmentPath.CreateEmbeddablesPath();
   end;
-
-  if PythonProject.Enabled then begin
-    PythonVersion := PythonProject.PythonVersion;
-    FScanner.AutoScan := true;
-    FScanner.DeleteEmbeddable := true;
-    FScanner.ScanRule := TScanRule.srFileName;
-  end else
-    FScanner.ScanRule := TScanRule.srFolder;
 end;
 
 destructor TPyEmbeddedEnvironment.Destroy;
