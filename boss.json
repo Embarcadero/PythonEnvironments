@@ -5,8 +5,7 @@
 	"homepage": "https://github.com/Embarcadero/PythonEnviroments",
 	"mainsrc": "./src",
 	"projects": [
-		"./packages/P4DTools.dproj",
-		"./packages/P4DEnvironmentProject.dproj",
+		"./packages/P4DTools.dproj",	
 		"./packages/dclP4DEnvironmentProject.dproj",
 		"./packages/P4DEnvironment.dproj",
 		"./packages/dclP4DEnvironment.dproj"
