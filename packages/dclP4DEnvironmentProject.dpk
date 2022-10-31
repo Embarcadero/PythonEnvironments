@@ -32,8 +32,7 @@ package dclP4DEnvironmentProject;
 
 requires
   rtl,
-  designide,
-  P4DEnvironmentProject;
+  designide;
 
 contains
   PyEnvironment.Project.IDE.Helper in '..\src\Project\IDE\PyEnvironment.Project.IDE.Helper.pas',
