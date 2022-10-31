@@ -135,7 +135,6 @@ implementation
 
 uses
   System.IOUtils,
-  PyEnvironment.Project,
   PyEnvironment.Project.IDE.Helper;
 
 function GetActiveFormEditor: IOTAFormEditor;

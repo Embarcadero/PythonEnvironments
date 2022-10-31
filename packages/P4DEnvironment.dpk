@@ -31,8 +31,7 @@ package P4DEnvironment;
 requires
   rtl,
   python,
-  p4dtools,
-  p4denvironmentproject;
+  p4dtools;
 
 contains
   PyEnvironment in '..\src\PyEnvironment.pas',
