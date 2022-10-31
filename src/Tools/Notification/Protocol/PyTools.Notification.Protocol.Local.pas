@@ -48,6 +48,7 @@ type
 
     TLocalClient = class(TBaseClientNotificationProtocol)
     private
+      [Unsafe]
       FParent: TLocalNotificationProtocol;
       FTask: TThread;
     protected
@@ -60,6 +61,7 @@ type
 
     TLocalServer = class(TBaseServerNotificationProtocol)
     private
+      [Unsafe]
       FParent: TLocalNotificationProtocol;
       FTask: TThread;
     protected
