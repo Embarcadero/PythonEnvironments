@@ -165,8 +165,7 @@
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_1_Win32)'!=''">
         <DCC_RemoteDebug>false</DCC_RemoteDebug>
-        <Debugger_HostApplication>C:\Program Files (x86)\Embarcadero\Studio\22.0\bin\bds.exe</Debugger_HostApplication>
-        <Debugger_RunParams>C:\Users\lucas\OneDrive\Documents\Embarcadero\Studio\Projects\deployabletest\PyDeploy.dpr</Debugger_RunParams>
+        <Debugger_HostApplication></Debugger_HostApplication>
         <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
         <VerInfo_Locale>1033</VerInfo_Locale>
     </PropertyGroup>
@@ -197,12 +196,10 @@
         <DCCReference Include="rtl.dcp"/>
         <DCCReference Include="python.dcp"/>
         <DCCReference Include="p4dtools.dcp"/>
-        <DCCReference Include="p4denvironmentproject.dcp"/>
         <DCCReference Include="..\src\PyEnvironment.pas"/>
-        <DCCReference Include="..\src\PyEnvironment.Notification.pas"/>
+        <DCCReference Include="..\src\PyEnvironment.Path.pas"/>
         <DCCReference Include="..\src\PyEnvironment.Distribution.pas"/>
         <DCCReference Include="..\src\PyEnvironment.Local.pas"/>
-        <DCCReference Include="..\src\PyEnvironment.Path.pas"/>
         <DCCReference Include="..\src\Embeddable\PyEnvironment.Embeddable.pas"/>
         <DCCReference Include="..\src\Embeddable\Res\PyEnvironment.Embeddable.Res.pas"/>
         <DCCReference Include="..\src\Embeddable\Res\PyEnvironment.Embeddable.Res.Python37.pas"/>
@@ -324,13 +321,13 @@
             <Platforms>
                 <Platform value="Android">True</Platform>
                 <Platform value="Android64">True</Platform>
+                <Platform value="iOSDevice64">False</Platform>
+                <Platform value="iOSSimARM64">False</Platform>
                 <Platform value="Linux64">True</Platform>
                 <Platform value="OSX64">True</Platform>
                 <Platform value="OSXARM64">True</Platform>
                 <Platform value="Win32">True</Platform>
                 <Platform value="Win64">True</Platform>
-                <Platform value="iOSDevice64">False</Platform>
-                <Platform value="iOSSimARM64">False</Platform>
             </Platforms>
         </BorlandProject>
         <ProjectFileVersion>12</ProjectFileVersion>
