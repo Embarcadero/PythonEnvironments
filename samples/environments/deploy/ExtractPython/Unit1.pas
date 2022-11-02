@@ -103,11 +103,13 @@ begin
   Memo1.Lines.Add(Format('Python %s is ready.', [APythonVersion]));
 end;
 
+// Assigning the below procedure to the "OnZipProgress" event of
+// TPyEmbeddedEnvironment1 component
 procedure TForm1.PyEmbeddedEnvironment1ZipProgress(Sender: TObject;
   ADistribution: TPyCustomEmbeddableDistribution; FileName: string;
   Header: TZipHeader; Position: Int64);
 begin
-  //Zip progress is neer synchronized, even when
+  //Zip progress is near synchronized, even when
   //the SynchronizeEvents property is set to true
   TThread.Queue(nil, procedure() begin
     Label1.Text := FileName.Replace(

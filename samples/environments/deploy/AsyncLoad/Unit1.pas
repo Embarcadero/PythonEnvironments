@@ -48,6 +48,7 @@ begin
     ShowMessage('Waiting for background operation. Try again.');
 end;
 
+// Loading the Python Asynchronously
 procedure TForm1.FormCreate(Sender: TObject);
 var
   LAsyncSetup: IAsyncResult;
