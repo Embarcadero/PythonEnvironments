@@ -2,8 +2,8 @@ object Form1: TForm1
   Left = 0
   Top = 0
   Caption = 'ManuallyLoad'
-  ClientHeight = 189
-  ClientWidth = 479
+  ClientHeight = 201
+  ClientWidth = 432
   Position = MainFormCenter
   FormFactor.Width = 320
   FormFactor.Height = 480
@@ -15,14 +15,17 @@ object Form1: TForm1
     DataDetectorTypes = []
     Lines.Strings = (
       'Set the PyEmbeddedEnvironment1 "AutoLoad" property to False. '
-      'Check out the Delphi code.')
+      'Check out the Delphi code.'
+      ''
+      'Loading Python from user code level:'
+      '-----------------------------------------')
     Align = Client
-    Size.Width = 479.000000000000000000
-    Size.Height = 189.000000000000000000
+    Size.Width = 432.000000000000000000
+    Size.Height = 201.000000000000000000
     Size.PlatformDefault = False
     TabOrder = 2
-    Viewport.Width = 475.000000000000000000
-    Viewport.Height = 185.000000000000000000
+    Viewport.Width = 428.000000000000000000
+    Viewport.Height = 197.000000000000000000
   end
   object PythonEngine1: TPythonEngine
     AutoLoad = False
@@ -31,8 +34,8 @@ object Form1: TForm1
     APIVersion = 1013
     RegVersion = '3.9'
     UseLastKnownVersion = False
-    Left = 224
-    Top = 32
+    Left = 288
+    Top = 56
   end
   object PyEmbeddedEnvironment1: TPyEmbeddedEnvironment
     BeforeSetup = PyEmbeddedEnvironment1BeforeSetup
@@ -48,7 +51,7 @@ object Form1: TForm1
     Scanner.AutoScan = True
     Scanner.ScanRule = srFileName
     Scanner.DeleteEmbeddable = True
-    Left = 224
-    Top = 96
+    Left = 288
+    Top = 112
   end
 end

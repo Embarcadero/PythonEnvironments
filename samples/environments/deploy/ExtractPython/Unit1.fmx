@@ -2,8 +2,8 @@ object Form1: TForm1
   Left = 0
   Top = 0
   Caption = 'Extract Python Zip File'
-  ClientHeight = 189
-  ClientWidth = 543
+  ClientHeight = 232
+  ClientWidth = 452
   Position = MainFormCenter
   FormFactor.Width = 320
   FormFactor.Height = 480
@@ -16,25 +16,28 @@ object Form1: TForm1
     DataDetectorTypes = []
     Lines.Strings = (
       'Set the PyEmbeddedEnvironment1 "AutoLoad" property to False. '
-      'Check out the Delphi code.')
+      'Check out the Delphi code.'
+      ''
+      'Extracting Zipped Python Embeddable:'
+      '------------------------------------------')
     Align = Client
-    Size.Width = 543.000000000000000000
-    Size.Height = 167.000000000000000000
+    Size.Width = 452.000000000000000000
+    Size.Height = 210.000000000000000000
     Size.PlatformDefault = False
     TabOrder = 2
-    Viewport.Width = 539.000000000000000000
-    Viewport.Height = 163.000000000000000000
+    Viewport.Width = 448.000000000000000000
+    Viewport.Height = 206.000000000000000000
   end
   object StatusBar1: TStatusBar
-    Position.Y = 167.000000000000000000
+    Position.Y = 210.000000000000000000
     ShowSizeGrip = True
-    Size.Width = 543.000000000000000000
+    Size.Width = 452.000000000000000000
     Size.Height = 22.000000000000000000
     Size.PlatformDefault = False
     TabOrder = 5
     object Label1: TLabel
       Align = Client
-      Size.Width = 543.000000000000000000
+      Size.Width = 452.000000000000000000
       Size.Height = 22.000000000000000000
       Size.PlatformDefault = False
       TextSettings.WordWrap = False
@@ -48,8 +51,8 @@ object Form1: TForm1
     APIVersion = 1013
     RegVersion = '3.9'
     UseLastKnownVersion = False
-    Left = 224
-    Top = 32
+    Left = 296
+    Top = 40
   end
   object PyEmbeddedEnvironment1: TPyEmbeddedEnvironment
     BeforeSetup = PyEmbeddedEnvironment1BeforeSetup
@@ -66,7 +69,7 @@ object Form1: TForm1
     Scanner.AutoScan = True
     Scanner.ScanRule = srFileName
     Scanner.DeleteEmbeddable = True
-    Left = 224
-    Top = 96
+    Left = 296
+    Top = 104
   end
 end
