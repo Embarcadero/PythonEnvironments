@@ -56,6 +56,7 @@ begin
   Memo1.Lines.Add(Format('Activating Python %s.', [APythonVersion]));
 end;
 
+// PyEmbeddedEnvironmet1 will load Python automatically before setting it up.
 procedure TForm1.PyEmbeddedEnvironment1BeforeSetup(Sender: TObject;
   const APythonVersion: string);
 begin

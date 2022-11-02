@@ -2,8 +2,8 @@ object Form1: TForm1
   Left = 0
   Top = 0
   Caption = 'Asynchronous Load'
-  ClientHeight = 189
-  ClientWidth = 479
+  ClientHeight = 204
+  ClientWidth = 427
   Position = MainFormCenter
   FormFactor.Width = 320
   FormFactor.Height = 480
@@ -16,14 +16,17 @@ object Form1: TForm1
     DataDetectorTypes = []
     Lines.Strings = (
       'Set the PyEmbeddedEnvironment1 "AutoLoad" property to False. '
-      'Check out the Delphi code.')
+      'Check out the Delphi code.'
+      ''
+      'Loading Python Asynchronously:'
+      '------------------------------------')
     Align = Client
-    Size.Width = 479.000000000000000000
-    Size.Height = 189.000000000000000000
+    Size.Width = 427.000000000000000000
+    Size.Height = 204.000000000000000000
     Size.PlatformDefault = False
     TabOrder = 2
-    Viewport.Width = 475.000000000000000000
-    Viewport.Height = 185.000000000000000000
+    Viewport.Width = 423.000000000000000000
+    Viewport.Height = 200.000000000000000000
   end
   object PythonEngine1: TPythonEngine
     AutoLoad = False

@@ -39,9 +39,12 @@ implementation
 
 {$R *.fmx}
 
+// We're loading Python manually on creation of the Form
 procedure TForm1.FormCreate(Sender: TObject);
 begin
+  // Manually setup by the application developer with the "Setup()" method
   PyEmbeddedEnvironment1.Setup();
+  // Manually activated by the application developer with the "Activate()" method
   PyEmbeddedEnvironment1.Activate();
 end;
 
