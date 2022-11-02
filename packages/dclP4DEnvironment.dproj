@@ -95,7 +95,7 @@
         <DCCReference Include="rtl.dcp"/>
         <DCCReference Include="p4denvironment.dcp"/>
         <DCCReference Include="designide.dcp"/>
-        <DCCReference Include="dclP4DEnvironmentProject.dcp"/>
+        <DCCReference Include="dclp4denvironmentproject.dcp"/>
         <DCCReference Include="..\src\PyEnvironment.Registration.pas"/>
         <DCCReference Include="..\src\PyEnvionment.Editors.pas"/>
         <RcItem Include="..\images\png\128x128\embbeded.png">
@@ -411,13 +411,13 @@
             <Platforms>
                 <Platform value="Android">False</Platform>
                 <Platform value="Android64">False</Platform>
-                <Platform value="iOSDevice64">False</Platform>
-                <Platform value="iOSSimARM64">False</Platform>
                 <Platform value="Linux64">False</Platform>
                 <Platform value="OSX64">False</Platform>
                 <Platform value="OSXARM64">False</Platform>
                 <Platform value="Win32">True</Platform>
                 <Platform value="Win64">False</Platform>
+                <Platform value="iOSDevice64">False</Platform>
+                <Platform value="iOSSimARM64">False</Platform>
             </Platforms>
         </BorlandProject>
         <ProjectFileVersion>12</ProjectFileVersion>
