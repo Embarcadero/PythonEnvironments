@@ -26,9 +26,7 @@ type
     procedure PyEmbeddedEnvironment1Ready(Sender: TObject;
       const APythonVersion: string);
     procedure FormCreate(Sender: TObject);
-    procedure FormCloseQuery(Sender: TObject; var CanClose: Boolean);
   private
-    FAsyncActivate: IAsyncResult;
     { Private declarations }
   public
     { Public declarations }
@@ -41,26 +39,19 @@ implementation
 
 {$R *.fmx}
 
-procedure TForm1.FormCloseQuery(Sender: TObject; var CanClose: Boolean);
-begin
-  CanClose := FAsyncActivate.IsCompleted;
-  if not CanClose then
-    ShowMessage('Waiting for background operation. Try again.');
-end;
-
+// We're loading Python manually on creation of the Form
 procedure TForm1.FormCreate(Sender: TObject);
-var
-  LAsyncSetup: IAsyncResult;
 begin
-  LAsyncSetup := PyEmbeddedEnvironment1.SetupAsync();
-  FAsyncActivate := PyEmbeddedEnvironment1.ActivateAsync(LAsyncSetup);
-  Memo1.Lines.Add('Background task has started.');
+  // Manually setup by the application developer with the "Setup()" method
+  PyEmbeddedEnvironment1.Setup();
+  // Manually activated by the application developer with the "Activate()" method
+  PyEmbeddedEnvironment1.Activate();
 end;
 
 procedure TForm1.PyEmbeddedEnvironment1AfterActivate(Sender: TObject;
   const APythonVersion: string; const AActivated: Boolean);
 begin
-  Memo1.Lines.Add(Format('Python %s has been activated.', [APythonVersion]));
+ Memo1.Lines.Add(Format('Python %s has been activated.', [APythonVersion]));
 end;
 
 procedure TForm1.PyEmbeddedEnvironment1AfterSetup(Sender: TObject;

@@ -48,6 +48,7 @@ begin
     ShowMessage('Waiting for background operation. Try again.');
 end;
 
+// Load Python Asynchronously
 procedure TForm1.FormCreate(Sender: TObject);
 var
   LAsyncSetup: IAsyncResult;
@@ -56,6 +57,8 @@ begin
   FAsyncActivate := PyEmbeddedEnvironment1.ActivateAsync(LAsyncSetup);
   Memo1.Lines.Add('Background task has started.');
 end;
+
+// Enqueue the procedures of all of the events below
 
 procedure TForm1.PyEmbeddedEnvironment1AfterActivate(Sender: TObject;
   const APythonVersion: string; const AActivated: Boolean);
