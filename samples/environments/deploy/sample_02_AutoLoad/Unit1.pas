@@ -25,7 +25,6 @@ type
       const AException: Exception);
     procedure PyEmbeddedEnvironment1Ready(Sender: TObject;
       const APythonVersion: string);
-    procedure FormCreate(Sender: TObject);
   private
     { Private declarations }
   public
@@ -38,12 +37,6 @@ var
 implementation
 
 {$R *.fmx}
-
-procedure TForm1.FormCreate(Sender: TObject);
-begin
-  PyEmbeddedEnvironment1.Setup();
-  PyEmbeddedEnvironment1.Activate();
-end;
 
 procedure TForm1.PyEmbeddedEnvironment1AfterActivate(Sender: TObject;
   const APythonVersion: string; const AActivated: Boolean);
@@ -63,6 +56,7 @@ begin
   Memo1.Lines.Add(Format('Activating Python %s.', [APythonVersion]));
 end;
 
+// PyEmbeddedEnvironmet1 will load Python automatically before setting it up.
 procedure TForm1.PyEmbeddedEnvironment1BeforeSetup(Sender: TObject;
   const APythonVersion: string);
 begin
