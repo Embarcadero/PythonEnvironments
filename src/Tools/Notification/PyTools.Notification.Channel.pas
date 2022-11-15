@@ -207,6 +207,32 @@ uses
   System.Rtti,
   PyTools.Exception;
 
+type
+  //For backward compatibility
+  TRttiObjectHelper = class helper for TRttiObject
+  public
+    function GetAttribute(AAttrClass: TCustomAttributeClass): TCustomAttribute; overload;
+    function GetAttribute<T: TCustomAttribute>: T; overload; inline;
+  end;
+
+{ TRttiObjectHelper }
+
+function TRttiObjectHelper.GetAttribute(
+  AAttrClass: TCustomAttributeClass): TCustomAttribute;
+var
+  LAttr: TCustomAttribute;
+begin
+  for LAttr in GetAttributes do
+    if LAttr is AAttrClass then
+      Exit(LAttr);
+  Result := nil;
+end;
+
+function TRttiObjectHelper.GetAttribute<T>: T;
+begin
+  Result := T(GetAttribute(T));
+end;
+
 { RequestChannelAttribute }
 
 constructor RequestChannelAttribute.Create(const AIdentifier: TRequestChannelIdentifier);
