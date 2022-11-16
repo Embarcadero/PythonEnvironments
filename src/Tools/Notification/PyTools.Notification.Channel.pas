@@ -209,6 +209,8 @@ uses
 
 type
   //For backward compatibility
+  TCustomAttributeClass = class of TCustomAttribute;
+
   TRttiObjectHelper = class helper for TRttiObject
   public
     function GetAttribute(AAttrClass: TCustomAttributeClass): TCustomAttribute; overload;
