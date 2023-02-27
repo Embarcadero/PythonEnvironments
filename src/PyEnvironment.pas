@@ -676,6 +676,11 @@ begin
       DoInternalError();
   end;
 
+  // Set the current path to the one we have rw permission
+  {$IFDEF ANDROID}
+  SetCurrentDir(FPythonEngine.PythonHome);
+  {$ENDIF ANDROID}
+
   DoAfterActivate(APythonVersion, LDistribution, Result, ACancelation);
 
   try
