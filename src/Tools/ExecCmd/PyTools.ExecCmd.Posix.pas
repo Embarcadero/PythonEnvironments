@@ -320,6 +320,22 @@ end;
 { TExecCmd.TStdReader }
 
 function TExecCmd.TStdReader.PeekMessage: string;
+
+  function UTF8ArrayToString(const AStrArray: array of Byte): string;
+  var
+    LLenght: Integer;
+  begin
+    LLenght := Length(AStrArray);
+    if LLenght = 0 then Exit('');
+    SetLength(Result, LLenght);
+
+    LLenght := Utf8ToUnicode(PWideChar(Result), LLenght + 1, PAnsiChar(@AStrArray[0]), LLenght);
+    if LLenght > 0 then
+      SetLength(Result, LLenght - 1)
+    else
+      Result := '';
+  end;
+
 var
   LBuffer: array[0..511] of UInt8;
   LCount: integer;
@@ -334,7 +350,7 @@ begin
     end else if (LCount = 0) then
       Exit(String.Empty)
     else begin
-      Exit(Copy(UTF8ToString(@LBuffer[0]), 1, UTF8ToString(@LBuffer[0]).Length -1));
+      Exit(UTF8ArrayToString(LBuffer));
     end;
   end;
 end;
