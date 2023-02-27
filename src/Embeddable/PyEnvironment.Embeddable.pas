@@ -68,6 +68,7 @@ type
     {$IFDEF POSIX}
     function FileIsExecutable(const AFilePath: string): boolean;
     {$ENDIF POSIX}
+    procedure CreateSymlink(const ASymlink, ATarget: string);
   protected
     function EnvironmentExists(): boolean;
     /// <summary>
@@ -79,6 +80,7 @@ type
     ///   An embeddable distribution will be used as an "image".
     /// </summary>
     procedure CreateEnvironment(const ACancelation: ICancelation); virtual;
+    procedure CreateSymLinks(); virtual;
     procedure LoadSettings(const ACancelation: ICancelation); virtual;
   protected
     function GetEnvironmentPath(): string;
@@ -167,11 +169,12 @@ uses
   System.IOUtils,
   System.Character,
   System.StrUtils,
+  System.RegularExpressions,
   PyTools.ExecCmd,
   PyEnvironment.Exception,
   PyEnvironment.Path
   {$IFDEF POSIX}
-  , Posix.SysStat, Posix.Stdlib, Posix.String_, Posix.Errno
+  , Posix.SysStat, Posix.Stdlib, Posix.String_, Posix.Errno, Posix.Unistd
   {$ENDIF}
   ;
 
@@ -205,6 +208,52 @@ begin
   finally
     LAdapter.Free();
   end;
+end;
+
+procedure TPyCustomEmbeddableDistribution.CreateSymlink(const ASymlink,
+  ATarget: string);
+var
+  LExistingTarget: string;
+begin
+  LExistingTarget := String.Empty;
+  if TFile.Exists(ATarget) then begin
+    //There is a bug with TFile.Exists and TFile.GetSymLinkTarget for Android
+    //So we recreate it every time
+    DeleteFile(ASymlink);
+
+    if not TFile.CreateSymLink(ASymlink, ATarget) then
+      raise ESymlinkFailed.CreateFmt('Failed to create the symlink: %s -> %s', [ASymlink, ATarget]);
+  end;
+end;
+
+procedure TPyCustomEmbeddableDistribution.CreateSymLinks;
+var
+  LTargetInterpreter: string;
+  LTargetLauncher: string;
+  LSymlinkInterpreter: string;
+  LSynlinkLauncher: string;
+begin
+  {$IFNDEF ANDROID}
+  Exit;
+  {$ENDIF ANDROID}
+  //Real file names
+  LTargetInterpreter := TPath.Combine(
+    TPath.GetLibraryPath(),
+    String.Format('libpython%s.so', [PythonVersion]));
+  LTargetLauncher := TPath.Combine(
+    TPath.GetLibraryPath(),
+    String.Format('libpythonlauncher%s.so', [PythonVersion]));
+  //Symlink names
+  LSymlinkInterpreter := TPath.Combine(
+    TPath.Combine(GetEnvironmentPath(), 'lib'),
+    String.Format('libpython%s.so', [PythonVersion]));
+  LSynlinkLauncher := TPath.Combine(
+    TPath.Combine(GetEnvironmentPath(), 'bin'),
+    String.Format('python%s', [PythonVersion]));
+  //Creates the interpreter symlink
+  CreateSymlink(LSymlinkInterpreter, LTargetInterpreter);
+  //Creates the launcher symlink
+  CreateSymlink(LSynlinkLauncher, LTargetLauncher);
 end;
 
 procedure TPyCustomEmbeddableDistribution.DoZipProgressEvt(Sender: TObject; FileName: string;
@@ -247,8 +296,10 @@ function TPyCustomEmbeddableDistribution.FindExecutable: string;
   begin
     Result := TDirectory.GetFiles(APath, 'python*', TSearchOption.soTopDirectoryOnly,
       function(const Path: string; const SearchRec: TSearchRec): boolean
+      var
+        LFileName: string;
       begin
-        var LFileName: string := SearchRec.Name;
+        LFileName := SearchRec.Name;
         if LFileName.EndsWith('m') then //3.7 and lower contain a "m" as sufix.
           LFileName := LFileName.Remove(Length(LFileName) - 1);
 
@@ -274,14 +325,6 @@ begin
     Exit(Result)
   else
     Exit(String.Empty);
-  {$ELSEIF DEFINED(ANDROID)}
-  //Let's try it in the library path first
-  //we should place it in the library path in Android
-  Result := TPath.GetLibraryPath();
-  LFiles := DoSearch(Result);
-  if LFiles <> nil then
-    Exit(LFiles[Low(LFiles)]);
-  Result := TPath.Combine(GetEnvironmentPath(), 'bin');
   {$ELSE}
   Result := TPath.Combine(GetEnvironmentPath(), 'bin');
   {$ENDIF}
@@ -303,14 +346,14 @@ function TPyCustomEmbeddableDistribution.FindSharedLibrary: string;
     LSearch: string;
   begin
     LFile := TPath.Combine(APath, ALibName);
-    if not TFile.Exists(LFile) then begin
-      LSearch := ALibName.Replace(TPath.GetExtension(ALibName), '') + '*' + TPath.GetExtension(ALibName);
-      Result := TDirectory.GetFiles(
-        APath,
-        LSearch, //Python <= 3.7 might contain a "m" as sufix.
-        TSearchOption.soTopDirectoryOnly);
-    end else
-      Result := [LFile];
+    if TFile.Exists(LFile) then
+      Exit(TArray<string>.Create(LFile));
+
+    LSearch := ALibName.Replace(TPath.GetExtension(ALibName), '') + '*' + TPath.GetExtension(ALibName);
+    Result := TDirectory.GetFiles(
+      APath,
+      LSearch, //Python <= 3.7 might contain a "m" as sufix.
+      TSearchOption.soTopDirectoryOnly);
   end;
 
 var
@@ -327,14 +370,6 @@ begin
 
   {$IFDEF MSWINDOWS}
   LPath := GetEnvironmentPath();
-  {$ELSEIF DEFINED(ANDROID)}
-  //Let's try it in the library path first - we should place it in the library path in Android
-  LPath := TPath.GetLibraryPath();
-  LFiles := DoSearch(LLibName, LPath);
-  if LFiles <> nil then
-    Exit(LFiles[Low(LFiles)]);
-  //Try to find it in the environment folder
-  LPath := TPath.Combine(GetEnvironmentPath(), 'lib');
   {$ELSEIF DEFINED(MACOS)}
   //Let's try it in the library path first
   LPath := TPyEnvironmentPath.ResolvePath(TPyEnvironmentPath.ENVIRONMENT_PATH);
@@ -384,6 +419,8 @@ begin
 
     CreateEnvironment(ACancelation);
   end;
+
+  CreateSymLinks();
 
   LoadSettings(ACancelation);
 
