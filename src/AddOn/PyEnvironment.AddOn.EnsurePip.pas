@@ -42,6 +42,9 @@ uses
 type
   [ComponentPlatforms(pidAllPlatforms)]
   TPyEnvironmentAddOnEnsurePip = class(TPyEnvironmentCustomAddOn)
+  private
+    FVerbose: boolean;
+    FUpgrade: boolean;
   protected
     function GetInfo(): TPyPluginInfo; override;
     function IsInstalled(): boolean; override;
@@ -51,6 +54,8 @@ type
     constructor Create(AOwner: TComponent); override;
   published
     property Triggers default [TPyEnvironmentaddOnTrigger.trAfterSetup];
+    property Verbose: boolean read FVerbose write FVerbose;
+    property Upgrade: boolean read FUpgrade write FUpgrade;
   end;
 
 implementation
@@ -119,6 +124,7 @@ var
   LPythonHome: string;
   LExecutable: string;
   LSharedLibrary: string;
+  LInput: TArray<string>;
   LCmd: IExecCmd;
 begin
   inherited;
@@ -127,15 +133,23 @@ begin
   LSharedLibrary := TPath.Combine(GetPythonEngine().DllPath,
     GetPythonEngine().DllName);
 
+  LInput := ['-m', 'ensurepip'];
+
+  if FVerbose then
+    LInput := LInput + ['--verbose'];
+
+  if FUpgrade then
+    LInput := LInput + ['--upgrade'];
+
   LCmd := TExecCmdService.Cmd(
     LExecutable,
     TExecCmdArgs.BuildArgv(
-      LExecutable, ['-m', 'ensurepip']),
+      LExecutable, LInput),
     TExecCmdArgs.BuildEnvp(
       LPythonHome,
       LExecutable,
       LSharedLibrary))
-    .Run([TRedirect.stderr]);
+    .Run([TRedirect.stdout, TRedirect.stderr]);
 
   TSpinWait.SpinUntil(function(): boolean begin
     Result := not LCmd.IsAlive or ACancelation.IsCancelled;
@@ -144,7 +158,9 @@ begin
   ACancelation.CheckCancelled();
 
   if (LCmd.Wait() <> EXIT_SUCCESS) then
-    raise EPipSetupFailed.Create('PIP setup has failed.' + #13#10 + LCmd.StdErr.ReadAll());
+    raise EPipSetupFailed.Create('PIP setup has failed.'
+      + #13#10
+      + LCmd.Output);
 end;
 
 end.
