@@ -16,6 +16,8 @@ type
 
   EDirectoryNotFoundException = System.SysUtils.EDirectoryNotFoundException;
 
+  ESymlinkFailed = class(Exception);
+
 implementation
 
 end.
