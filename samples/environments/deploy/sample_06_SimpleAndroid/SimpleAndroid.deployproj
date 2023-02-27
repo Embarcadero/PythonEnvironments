@@ -4,115 +4,13 @@
         <ProjectFileVersion>12</ProjectFileVersion>
     </ProjectExtensions>
     <PropertyGroup>
-        <DeviceId Condition="'$(Platform)'=='Android'"/>
-        <DeviceId Condition="'$(Platform)'=='Android64'">41ea5b6a</DeviceId>
+        <DeviceId Condition="'$(Platform)'=='Android'">0065996947</DeviceId>
+        <DeviceId Condition="'$(Platform)'=='Android64'">0065996947</DeviceId>
         <DeviceId Condition="'$(Platform)'=='iOSDevice64'"/>
         <DeviceId Condition="'$(Platform)'=='iOSSimARM64'"/>
     </PropertyGroup>
-    <ItemGroup Condition="'$(Platform)'=='OSX64'">
-        <DeployFile Include="$(PYTHONENVIRONMENTDIR)\python\python3-macos-3.9.15-x86_64.zip" Condition="'$(Config)'=='Debug'">
-            <RemoteDir>SimpleAndroid.app\Contents\Resources\</RemoteDir>
-            <RemoteName>python3-macos-3.9.15-x86_64.zip</RemoteName>
-            <DeployClass>Python</DeployClass>
-            <Operation>0</Operation>
-            <LocalCommand/>
-            <RemoteCommand/>
-            <Overwrite>True</Overwrite>
-            <Required>True</Required>
-        </DeployFile>
-        <DeployFile Include="$(PYTHONENVIRONMENTDIR)\python\python3-macos-3.9.15-x86_64.zip" Condition="'$(Config)'=='Release'">
-            <RemoteDir>SimpleAndroid.app\Contents\Resources\</RemoteDir>
-            <RemoteName>python3-macos-3.9.15-x86_64.zip</RemoteName>
-            <DeployClass>Python</DeployClass>
-            <Operation>0</Operation>
-            <LocalCommand/>
-            <RemoteCommand/>
-            <Overwrite>True</Overwrite>
-            <Required>True</Required>
-        </DeployFile>
-        <DeployFile Include="$(PYTHONENVIRONMENTDIR)\python\macos\3.9.15\intel\python3.9" Condition="'$(Config)'=='Debug'">
-            <RemoteDir>SimpleAndroid.app\Contents\MacOS\</RemoteDir>
-            <RemoteName>python3.9</RemoteName>
-            <DeployClass>Python</DeployClass>
-            <Operation>1</Operation>
-            <LocalCommand/>
-            <RemoteCommand/>
-            <Overwrite>True</Overwrite>
-            <Required>True</Required>
-        </DeployFile>
-        <DeployFile Include="$(PYTHONENVIRONMENTDIR)\python\macos\3.9.15\intel\python3.9" Condition="'$(Config)'=='Release'">
-            <RemoteDir>SimpleAndroid.app\Contents\MacOS\</RemoteDir>
-            <RemoteName>python3.9</RemoteName>
-            <DeployClass>Python</DeployClass>
-            <Operation>1</Operation>
-            <LocalCommand/>
-            <RemoteCommand/>
-            <Overwrite>True</Overwrite>
-            <Required>True</Required>
-        </DeployFile>
-        <DeployFile Include="$(PYTHONENVIRONMENTDIR)\python\macos\3.9.15\intel\libpython3.9.dylib" Condition="'$(Config)'=='Debug'">
-            <RemoteDir>SimpleAndroid.app\Contents\MacOS\</RemoteDir>
-            <RemoteName>libpython3.9.dylib</RemoteName>
-            <DeployClass>Python</DeployClass>
-            <Operation>1</Operation>
-            <LocalCommand/>
-            <RemoteCommand/>
-            <Overwrite>True</Overwrite>
-            <Required>True</Required>
-        </DeployFile>
-        <DeployFile Include="$(PYTHONENVIRONMENTDIR)\python\macos\3.9.15\intel\libpython3.9.dylib" Condition="'$(Config)'=='Release'">
-            <RemoteDir>SimpleAndroid.app\Contents\MacOS\</RemoteDir>
-            <RemoteName>libpython3.9.dylib</RemoteName>
-            <DeployClass>Python</DeployClass>
-            <Operation>1</Operation>
-            <LocalCommand/>
-            <RemoteCommand/>
-            <Overwrite>True</Overwrite>
-            <Required>True</Required>
-        </DeployFile>
-    </ItemGroup>
-    <ItemGroup Condition="'$(Platform)'=='Win32'">
-        <DeployFile Include="$(PYTHONENVIRONMENTDIR)\python\python3-windows-3.9.13-win32.zip" Condition="'$(Config)'=='Debug'">
-            <RemoteDir>SimpleAndroid\</RemoteDir>
-            <RemoteName>python3-windows-3.9.13-win32.zip</RemoteName>
-            <DeployClass>Python</DeployClass>
-            <Operation>0</Operation>
-            <LocalCommand/>
-            <RemoteCommand/>
-            <Overwrite>True</Overwrite>
-            <Required>True</Required>
-        </DeployFile>
-        <DeployFile Include="$(PYTHONENVIRONMENTDIR)\python\python3-windows-3.9.13-win32.zip" Condition="'$(Config)'=='Release'">
-            <RemoteDir>SimpleAndroid\</RemoteDir>
-            <RemoteName>python3-windows-3.9.13-win32.zip</RemoteName>
-            <DeployClass>Python</DeployClass>
-            <Operation>0</Operation>
-            <LocalCommand/>
-            <RemoteCommand/>
-            <Overwrite>True</Overwrite>
-            <Required>True</Required>
-        </DeployFile>
-        <DeployFile Include="Win32\Debug\SimpleAndroid.exe" Condition="'$(Config)'=='Debug'">
-            <RemoteDir>SimpleAndroid\</RemoteDir>
-            <RemoteName>SimpleAndroid.exe</RemoteName>
-            <DeployClass>ProjectOutput</DeployClass>
-            <Operation>0</Operation>
-            <LocalCommand/>
-            <RemoteCommand/>
-            <Overwrite>True</Overwrite>
-            <Required>True</Required>
-        </DeployFile>
-        <DeployFile Include="Win32\Release\SimpleAndroid.exe" Condition="'$(Config)'=='Release'">
-            <RemoteDir>SimpleAndroid\</RemoteDir>
-            <RemoteName>SimpleAndroid.exe</RemoteName>
-            <DeployClass>ProjectOutput</DeployClass>
-            <Operation>0</Operation>
-            <LocalCommand/>
-            <RemoteCommand/>
-            <Overwrite>True</Overwrite>
-            <Required>True</Required>
-        </DeployFile>
-    </ItemGroup>
+    <ItemGroup Condition="'$(Platform)'=='OSX64'"/>
+    <ItemGroup Condition="'$(Platform)'=='Win32'"/>
     <ItemGroup Condition="'$(Platform)'=='Android64'">
         <DeployFile Include="Android64\Release\strings.xml" Condition="'$(Config)'=='Release'">
             <RemoteDir>SimpleAndroid\res\values\</RemoteDir>
@@ -161,6 +59,15 @@
             <RemoteCommand/>
             <Overwrite>True</Overwrite>
         </DeployFile>
+        <DeployFile Include="Android64\Release\colors.xml" Condition="'$(Config)'=='Release'">
+            <RemoteDir>SimpleAndroid\res\values\</RemoteDir>
+            <RemoteName>colors.xml</RemoteName>
+            <DeployClass>Android_Colors</DeployClass>
+            <Operation>1</Operation>
+            <LocalCommand/>
+            <RemoteCommand/>
+            <Overwrite>True</Overwrite>
+        </DeployFile>
         <DeployFile Include="Android64\Debug\AndroidManifest.xml" Condition="'$(Config)'=='Debug'">
             <RemoteDir>SimpleAndroid\</RemoteDir>
             <RemoteName>AndroidManifest.xml</RemoteName>
@@ -170,10 +77,10 @@
             <RemoteCommand/>
             <Overwrite>True</Overwrite>
         </DeployFile>
-        <DeployFile Include="Android64\Release\colors.xml" Condition="'$(Config)'=='Release'">
-            <RemoteDir>SimpleAndroid\res\values\</RemoteDir>
-            <RemoteName>colors.xml</RemoteName>
-            <DeployClass>Android_Colors</DeployClass>
+        <DeployFile Include="Android64\Release\splash_image_def.xml" Condition="'$(Config)'=='Release'">
+            <RemoteDir>SimpleAndroid\res\drawable\</RemoteDir>
+            <RemoteName>splash_image_def.xml</RemoteName>
+            <DeployClass>AndroidSplashImageDef</DeployClass>
             <Operation>1</Operation>
             <LocalCommand/>
             <RemoteCommand/>
@@ -271,6 +178,16 @@
             <Overwrite>True</Overwrite>
             <Required>True</Required>
         </DeployFile>
+        <DeployFile Include="$(PYTHONENVIRONMENTDIR)\python\android\3.9.15\arm\libpython3.9.so" Condition="'$(Config)'=='Debug' And '$(AndroidAppBundle)'=='true'">
+            <RemoteDir>SimpleAndroid\library\lib\armeabi-v7a\</RemoteDir>
+            <RemoteName>libpython3.9.so</RemoteName>
+            <DeployClass>Python</DeployClass>
+            <Operation>1</Operation>
+            <LocalCommand/>
+            <RemoteCommand/>
+            <Overwrite>True</Overwrite>
+            <Required>True</Required>
+        </DeployFile>
         <DeployFile Include="$(BDS)\bin\Artwork\Android\FM_SplashImage_640x480.png" Condition="'$(Config)'=='Debug'">
             <RemoteDir>SimpleAndroid\res\drawable-large\</RemoteDir>
             <RemoteName>splash_image.png</RemoteName>
@@ -317,30 +234,11 @@
             <RemoteCommand/>
             <Overwrite>True</Overwrite>
         </DeployFile>
-        <DeployFile Include="Android64\Release\splash_image_def.xml" Condition="'$(Config)'=='Release'">
-            <RemoteDir>SimpleAndroid\res\drawable\</RemoteDir>
-            <RemoteName>splash_image_def.xml</RemoteName>
-            <DeployClass>AndroidSplashImageDef</DeployClass>
-            <Operation>1</Operation>
-            <LocalCommand/>
-            <RemoteCommand/>
-            <Overwrite>True</Overwrite>
-        </DeployFile>
         <DeployFile Include="$(PYTHONENVIRONMENTDIR)\python\python3-android-3.9.15-arm.zip" Condition="'$(Config)'=='Debug' And '$(AndroidAppBundle)'=='true'">
             <RemoteDir>SimpleAndroid\assets\internal\</RemoteDir>
             <RemoteName>python3-android-3.9.15-arm.zip</RemoteName>
             <DeployClass>Python</DeployClass>
             <Operation>0</Operation>
-            <LocalCommand/>
-            <RemoteCommand/>
-            <Overwrite>True</Overwrite>
-            <Required>True</Required>
-        </DeployFile>
-        <DeployFile Include="$(PYTHONENVIRONMENTDIR)\python\android\3.9.15\arm\libpython3.9.so" Condition="'$(Config)'=='Debug' And '$(AndroidAppBundle)'=='true'">
-            <RemoteDir>SimpleAndroid\library\lib\armeabi-v7a\</RemoteDir>
-            <RemoteName>libpython3.9.so</RemoteName>
-            <DeployClass>Python</DeployClass>
-            <Operation>1</Operation>
             <LocalCommand/>
             <RemoteCommand/>
             <Overwrite>True</Overwrite>
@@ -439,6 +337,15 @@
             <RemoteCommand/>
             <Overwrite>True</Overwrite>
         </DeployFile>
+        <DeployFile Include="Android64\Debug\SimpleAndroid.classes" Condition="'$(Config)'=='Debug'">
+            <RemoteDir>SimpleAndroid\classes\</RemoteDir>
+            <RemoteName>SimpleAndroid.classes</RemoteName>
+            <DeployClass>AndroidClasses</DeployClass>
+            <Operation>64</Operation>
+            <LocalCommand/>
+            <RemoteCommand/>
+            <Overwrite>True</Overwrite>
+        </DeployFile>
         <DeployFile Include="$(BDS)\lib\android\debug\mips\libnative-activity.so" Condition="'$(Config)'=='Debug'">
             <RemoteDir>SimpleAndroid\library\lib\mips\</RemoteDir>
             <RemoteName>libSimpleEmbeddableRes.so</RemoteName>
@@ -471,15 +378,6 @@
             <RemoteName>libSimpleAndroid.so</RemoteName>
             <DeployClass>AndroidLibnativeMipsFile</DeployClass>
             <Operation>1</Operation>
-            <LocalCommand/>
-            <RemoteCommand/>
-            <Overwrite>True</Overwrite>
-        </DeployFile>
-        <DeployFile Include="Android64\Debug\SimpleAndroid.classes" Condition="'$(Config)'=='Debug'">
-            <RemoteDir>SimpleAndroid\classes\</RemoteDir>
-            <RemoteName>SimpleAndroid.classes</RemoteName>
-            <DeployClass>AndroidClasses</DeployClass>
-            <Operation>64</Operation>
             <LocalCommand/>
             <RemoteCommand/>
             <Overwrite>True</Overwrite>
@@ -629,6 +527,16 @@
             <RemoteCommand/>
             <Overwrite>True</Overwrite>
         </DeployFile>
+        <DeployFile Include="Android64\Release\libSimpleAndroid.so" Condition="'$(Config)'=='Release'">
+            <RemoteDir>SimpleAndroid\library\lib\arm64-v8a\</RemoteDir>
+            <RemoteName>libSimpleAndroid.so</RemoteName>
+            <DeployClass>ProjectOutput</DeployClass>
+            <Operation>1</Operation>
+            <LocalCommand/>
+            <RemoteCommand/>
+            <Overwrite>True</Overwrite>
+            <Required>True</Required>
+        </DeployFile>
         <DeployFile Include="Android64\Debug\styles-v21.xml" Condition="'$(Config)'=='Debug'">
             <RemoteDir>SimpleAndroid\res\values-v21\</RemoteDir>
             <RemoteName>styles.xml</RemoteName>
@@ -639,6 +547,16 @@
             <Overwrite>True</Overwrite>
         </DeployFile>
         <DeployFile Include="$(PYTHONENVIRONMENTDIR)\python\python3-android-3.9.15-arm64.zip" Condition="'$(Config)'=='Release'">
+            <RemoteDir>SimpleAndroid\assets\internal\</RemoteDir>
+            <RemoteName>python3-android-3.9.15-arm64.zip</RemoteName>
+            <DeployClass>Python</DeployClass>
+            <Operation>0</Operation>
+            <LocalCommand/>
+            <RemoteCommand/>
+            <Overwrite>True</Overwrite>
+            <Required>True</Required>
+        </DeployFile>
+        <DeployFile Include="$(PYTHONENVIRONMENTDIR)\python\python3-android-3.9.15-arm64.zip" Condition="'$(Config)'=='Debug'">
             <RemoteDir>SimpleAndroid\assets\internal\</RemoteDir>
             <RemoteName>python3-android-3.9.15-arm64.zip</RemoteName>
             <DeployClass>Python</DeployClass>
@@ -665,26 +583,6 @@
             <LocalCommand/>
             <RemoteCommand/>
             <Overwrite>True</Overwrite>
-        </DeployFile>
-        <DeployFile Include="Android64\Release\libSimpleAndroid.so" Condition="'$(Config)'=='Release'">
-            <RemoteDir>SimpleAndroid\library\lib\arm64-v8a\</RemoteDir>
-            <RemoteName>libSimpleAndroid.so</RemoteName>
-            <DeployClass>ProjectOutput</DeployClass>
-            <Operation>1</Operation>
-            <LocalCommand/>
-            <RemoteCommand/>
-            <Overwrite>True</Overwrite>
-            <Required>True</Required>
-        </DeployFile>
-        <DeployFile Include="$(PYTHONENVIRONMENTDIR)\python\python3-android-3.9.15-arm64.zip" Condition="'$(Config)'=='Debug'">
-            <RemoteDir>SimpleAndroid\assets\internal\</RemoteDir>
-            <RemoteName>python3-android-3.9.15-arm64.zip</RemoteName>
-            <DeployClass>Python</DeployClass>
-            <Operation>0</Operation>
-            <LocalCommand/>
-            <RemoteCommand/>
-            <Overwrite>True</Overwrite>
-            <Required>True</Required>
         </DeployFile>
         <DeployFile Include="$(BDS)\bin\Artwork\Android\FM_SplashImage_470x320.png" Condition="'$(Config)'=='Debug'">
             <RemoteDir>SimpleAndroid\res\drawable-normal\</RemoteDir>
@@ -767,132 +665,9 @@
             <Required>True</Required>
         </DeployFile>
     </ItemGroup>
-    <ItemGroup Condition="'$(Platform)'=='Win64'">
-        <DeployFile Include="$(PYTHONENVIRONMENTDIR)\python\python3-windows-3.9.13-amd64.zip" Condition="'$(Config)'=='Debug'">
-            <RemoteDir>SimpleAndroid\</RemoteDir>
-            <RemoteName>python3-windows-3.9.13-amd64.zip</RemoteName>
-            <DeployClass>Python</DeployClass>
-            <Operation>0</Operation>
-            <LocalCommand/>
-            <RemoteCommand/>
-            <Overwrite>True</Overwrite>
-            <Required>True</Required>
-        </DeployFile>
-        <DeployFile Include="$(PYTHONENVIRONMENTDIR)\python\python3-windows-3.9.13-amd64.zip" Condition="'$(Config)'=='Release'">
-            <RemoteDir>SimpleAndroid\</RemoteDir>
-            <RemoteName>python3-windows-3.9.13-amd64.zip</RemoteName>
-            <DeployClass>Python</DeployClass>
-            <Operation>0</Operation>
-            <LocalCommand/>
-            <RemoteCommand/>
-            <Overwrite>True</Overwrite>
-            <Required>True</Required>
-        </DeployFile>
-    </ItemGroup>
-    <ItemGroup Condition="'$(Platform)'=='OSXARM64'">
-        <DeployFile Include="$(PYTHONENVIRONMENTDIR)\python\macos\3.9.15\arm\libpython3.9.dylib" Condition="'$(Config)'=='Debug'">
-            <RemoteDir>SimpleAndroid.app\Contents\MacOS\</RemoteDir>
-            <RemoteName>libpython3.9.dylib</RemoteName>
-            <DeployClass>Python</DeployClass>
-            <Operation>1</Operation>
-            <LocalCommand/>
-            <RemoteCommand/>
-            <Overwrite>True</Overwrite>
-            <Required>True</Required>
-        </DeployFile>
-        <DeployFile Include="$(PYTHONENVIRONMENTDIR)\python\macos\3.9.15\arm\libpython3.9.dylib" Condition="'$(Config)'=='Release'">
-            <RemoteDir>SimpleAndroid.app\Contents\MacOS\</RemoteDir>
-            <RemoteName>libpython3.9.dylib</RemoteName>
-            <DeployClass>Python</DeployClass>
-            <Operation>1</Operation>
-            <LocalCommand/>
-            <RemoteCommand/>
-            <Overwrite>True</Overwrite>
-            <Required>True</Required>
-        </DeployFile>
-        <DeployFile Include="$(PYTHONENVIRONMENTDIR)\python\macos\3.9.15\arm\python3.9" Condition="'$(Config)'=='Debug'">
-            <RemoteDir>SimpleAndroid.app\Contents\MacOS\</RemoteDir>
-            <RemoteName>python3.9</RemoteName>
-            <DeployClass>Python</DeployClass>
-            <Operation>1</Operation>
-            <LocalCommand/>
-            <RemoteCommand/>
-            <Overwrite>True</Overwrite>
-            <Required>True</Required>
-        </DeployFile>
-        <DeployFile Include="$(PYTHONENVIRONMENTDIR)\python\macos\3.9.15\arm\python3.9" Condition="'$(Config)'=='Release'">
-            <RemoteDir>SimpleAndroid.app\Contents\MacOS\</RemoteDir>
-            <RemoteName>python3.9</RemoteName>
-            <DeployClass>Python</DeployClass>
-            <Operation>1</Operation>
-            <LocalCommand/>
-            <RemoteCommand/>
-            <Overwrite>True</Overwrite>
-            <Required>True</Required>
-        </DeployFile>
-        <DeployFile Include="$(PYTHONENVIRONMENTDIR)\python\python3-macos-3.9.15-universal2.zip" Condition="'$(Config)'=='Debug'">
-            <RemoteDir>SimpleAndroid.app\Contents\Resources\</RemoteDir>
-            <RemoteName>python3-macos-3.9.15-universal2.zip</RemoteName>
-            <DeployClass>Python</DeployClass>
-            <Operation>0</Operation>
-            <LocalCommand/>
-            <RemoteCommand/>
-            <Overwrite>True</Overwrite>
-            <Required>True</Required>
-        </DeployFile>
-        <DeployFile Include="$(PYTHONENVIRONMENTDIR)\python\python3-macos-3.9.15-universal2.zip" Condition="'$(Config)'=='Release'">
-            <RemoteDir>SimpleAndroid.app\Contents\Resources\</RemoteDir>
-            <RemoteName>python3-macos-3.9.15-universal2.zip</RemoteName>
-            <DeployClass>Python</DeployClass>
-            <Operation>0</Operation>
-            <LocalCommand/>
-            <RemoteCommand/>
-            <Overwrite>True</Overwrite>
-            <Required>True</Required>
-        </DeployFile>
-    </ItemGroup>
-    <ItemGroup Condition="'$(Platform)'=='Linux64'">
-        <DeployFile Include="$(PYTHONENVIRONMENTDIR)\python\python3-linux-3.9.15-x86_64.zip" Condition="'$(Config)'=='Debug'">
-            <RemoteDir>SimpleAndroid\</RemoteDir>
-            <RemoteName>python3-linux-3.9.15-x86_64.zip</RemoteName>
-            <DeployClass>Python</DeployClass>
-            <Operation>0</Operation>
-            <LocalCommand/>
-            <RemoteCommand/>
-            <Overwrite>True</Overwrite>
-            <Required>True</Required>
-        </DeployFile>
-        <DeployFile Include="$(PYTHONENVIRONMENTDIR)\python\python3-linux-3.9.15-x86_64.zip" Condition="'$(Config)'=='Release'">
-            <RemoteDir>SimpleAndroid\</RemoteDir>
-            <RemoteName>python3-linux-3.9.15-x86_64.zip</RemoteName>
-            <DeployClass>Python</DeployClass>
-            <Operation>0</Operation>
-            <LocalCommand/>
-            <RemoteCommand/>
-            <Overwrite>True</Overwrite>
-            <Required>True</Required>
-        </DeployFile>
-        <DeployFile Include="Linux64\Debug\SimpleAndroid" Condition="'$(Config)'=='Debug'">
-            <RemoteDir>SimpleAndroid\</RemoteDir>
-            <RemoteName>SimpleAndroid</RemoteName>
-            <DeployClass>ProjectOutput</DeployClass>
-            <Operation>1</Operation>
-            <LocalCommand/>
-            <RemoteCommand/>
-            <Overwrite>True</Overwrite>
-            <Required>True</Required>
-        </DeployFile>
-        <DeployFile Include="Linux64\Release\SimpleAndroid" Condition="'$(Config)'=='Release'">
-            <RemoteDir>SimpleAndroid\</RemoteDir>
-            <RemoteName>SimpleAndroid</RemoteName>
-            <DeployClass>ProjectOutput</DeployClass>
-            <Operation>1</Operation>
-            <LocalCommand/>
-            <RemoteCommand/>
-            <Overwrite>True</Overwrite>
-            <Required>True</Required>
-        </DeployFile>
-    </ItemGroup>
+    <ItemGroup Condition="'$(Platform)'=='Win64'"/>
+    <ItemGroup Condition="'$(Platform)'=='OSXARM64'"/>
+    <ItemGroup Condition="'$(Platform)'=='Linux64'"/>
     <ItemGroup Condition="'$(Platform)'=='iOSDevice64'"/>
     <ItemGroup Condition="'$(Platform)'=='iOSSimARM64'"/>
 </Project>
