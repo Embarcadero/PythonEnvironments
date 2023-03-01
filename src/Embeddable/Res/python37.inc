@@ -16,7 +16,7 @@
 {$IFDEF MACOS}
   {$IFDEF MACOS64}
     {$IFDEF CPUARM}
-    {$R ..\..\..\resources\python3-macos-3.7-universal2.res}
+    //{$R ..\..\..\resources\python3-macos-3.7-universal2.res}
     {$ELSE}
     {$R ..\..\..\resources\python3-macos-3.7-x86_64.res}
     {$ENDIF CPUARM}
