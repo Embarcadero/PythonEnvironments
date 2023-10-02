@@ -28,6 +28,7 @@
 (* confidential or legal reasons, everyone is free to derive a component  *)
 (* or to generate a diff file to my or other original sources.            *)
 (**************************************************************************)
+
 {$IFNDEF PLATFORM_UNIT}
 unit PyTools.ExecCmd.Posix;
 {$ENDIF PLATFORM_UNIT}
@@ -56,8 +57,12 @@ type
 
     TStdReader = class(TStdBase, IStdReader)
     private
+      const BUFFER_SIZE = 512;
+    private
+      FBuffer: TBytes;
       function PeekMessage(): string;
     public
+      constructor Create(const AParent: TExecCmd; const APipeDescriptor: TPipeDescriptors);
       function ReadNext: string;
       function ReadAll(): string; overload;
       function ReadAll(out AValue: string; const ATimeout: cardinal): boolean; overload;
@@ -89,19 +94,15 @@ type
     function GetOutput(): string;
     function GetIsAlive: boolean;
     function GetExitCode: Integer;
-
     procedure RedirectPipes(const ARedirections: TRedirections);
   public
     constructor Create(const ACmd: string; AArg, AEnv: TArray<string>);
     destructor Destroy(); override;
-
     function Run(): IExecCmd; overload;
     function Run(out AOutput: string): IExecCmd; overload;
     function Run(const ARedirections: TRedirections): IExecCmd; overload;
-
     procedure Kill();
     function Wait(): Integer;
-
     property IsAlive: boolean read GetIsAlive;
     property ExitCode: Integer read GetExitCode;
   end;
@@ -131,7 +132,6 @@ destructor TExecCmd.Destroy;
 begin
   if IsAlive then
     Kill();
-
   __close(FStdOutPipe.ReadDes);
   __close(FStdErrPipe.ReadDes);
   __close(FStdInPipe.WriteDes);
@@ -157,15 +157,14 @@ begin
   else if (LWaitedPid = 0) then
     Exit(true)
   else begin    
-    if WIFEXITED(LStatus) then begin
-      FExitCode := WEXITSTATUS(LStatus);
-    end else if WIFSIGNALED(LStatus) then begin
-      FExitCode := WTERMSIG(LStatus);
-    end else if WIFSTOPPED(LStatus) then begin
-      FExitCode := WSTOPSIG(LStatus);
-    end else begin
+    if WIFEXITED(LStatus) then
+      FExitCode := WEXITSTATUS(LStatus)
+    else if WIFSIGNALED(LStatus) then
+      FExitCode := WTERMSIG(LStatus)
+    else if WIFSTOPPED(LStatus) then
+      FExitCode := WSTOPSIG(LStatus)
+    else
       FExitCode := EXIT_FAILURE;
-    end;
   end;
   Result := false;
 end;
@@ -175,15 +174,11 @@ var
   LOutput: string;
 begin
   LOutput := String.Empty;
-
   if Assigned(FStdOut) then
     FStdOut.ReadAll(LOutput, INFINITE);
-
   Result := LOutput;
-
   if Assigned(FStdErr) then
     FStdErr.ReadAll(LOutput, INFINITE);
-
   Result := Result + LOutput;
 end;
 
@@ -212,10 +207,8 @@ begin
   //#define PARENT_WRITE write_pipe[1]
   //#define CHILD_WRITE read_pipe[1]
   //#define CHILD_READ  write_pipe[0]
-
   if (pipe(FStdOutPipe) = -1) or (pipe(FStdErrPipe) = -1) or (pipe(FStdInPipe) = -1) then
     raise EPipeFailed.Create('Failed to create pipe.');
-
   FPid := fork();
   if (FPid < 0) then
     raise EForkFailed.Create('Failed to fork process.')
@@ -228,26 +221,21 @@ begin
     __close(FStdErrPipe.WriteDes);
     __close(FStdErrPipe.ReadDes);
     __close(FStdInPipe.ReadDes);
-
     //https://man7.org/linux/man-pages/man2/execve.2.html
-
     //argv is an array of pointers to strings passed to the new program
     //as its command-line arguments. By convention, THE FIRST OF THESE
     //STRINGS (i.e., argv[0]) SHOULD CONTAIN THE FILENAME ASSOCIATED
     //WITH THE FILE BEING EXECUTED. The argv array must be terminated
     //by a NULL pointer. (Thus, in the new program, argv[argc] will be
     //NULL.)
-
     SetLength(LArg, Length(FArg) + 1);
     for I := Low(FArg) to High(FArg) do
       LArg[I] := LMarshaller.AsAnsi(PWideChar(FArg[I]) + #0).ToPointer();
     LArg[High(LArg)] := PAnsiChar(nil);
-
     SetLength(LEnv, Length(FEnv) + 1);
     for I := Low(FEnv) to High(FEnv) do
       LEnv[I] := LMarshaller.AsAnsi(PWideChar(FEnv[I]) + #0).ToPointer();
     LEnv[High(LEnv)] := PAnsiChar(nil);
-
     if execve(LMarshaller.AsAnsi(PWideChar(FCmd)).ToPointer(), PPAnsiChar(LArg), PPAnsiChar(LEnv)) = -1 then begin
       Halt(errno);
     end else
@@ -263,16 +251,12 @@ end;
 function TExecCmd.Run(const ARedirections: TRedirections): IExecCmd;
 begin
   RedirectPipes(ARedirections);
-
   if (TRedirect.stdout in ARedirections) then
     FStdOut := TStdReader.Create(Self, FStdOutPipe);
-
   if (TRedirect.stderr in ARedirections) then
     FStdErr := TStdReader.Create(Self, FStdErrPipe);
-
   if (TRedirect.stdin in ARedirections) then
     FStdIn := TStdWriter.Create(Self, FStdInPipe);
-
   Result := Self;
 end;
 
@@ -303,7 +287,6 @@ begin
   TSpinWait.SpinUntil(function(): boolean begin
     Result := not GetIsAlive();
   end, INFINITE);
-
   Result := GetExitCode();
 end;
 
@@ -319,29 +302,19 @@ end;
 
 { TExecCmd.TStdReader }
 
+constructor TExecCmd.TStdReader.Create(const AParent: TExecCmd;
+  const APipeDescriptor: TPipeDescriptors);
+begin
+  inherited;
+  SetLength(FBuffer, BUFFER_SIZE);
+end;
+
 function TExecCmd.TStdReader.PeekMessage: string;
-
-  function UTF8ArrayToString(const AStrArray: array of Byte): string;
-  var
-    LLenght: Integer;
-  begin
-    LLenght := Length(AStrArray);
-    if LLenght = 0 then Exit('');
-    SetLength(Result, LLenght);
-
-    LLenght := Utf8ToUnicode(PWideChar(Result), LLenght + 1, PAnsiChar(@AStrArray[0]), LLenght);
-    if LLenght > 0 then
-      SetLength(Result, LLenght - 1)
-    else
-      Result := '';
-  end;
-
 var
-  LBuffer: array[0..511] of UInt8;
   LCount: integer;
 begin
   while True do begin
-    LCount := __read(PipeDescriptor.ReadDes, @LBuffer[0], SizeOf(LBuffer));
+    LCount := __read(PipeDescriptor.ReadDes, @FBuffer[0], BUFFER_SIZE);
     if (LCount = -1) then begin
       if (errno = EINTR) then
         Continue
@@ -349,9 +322,8 @@ begin
         Exit(String.Empty);
     end else if (LCount = 0) then
       Exit(String.Empty)
-    else begin
-      Exit(UTF8ArrayToString(LBuffer));
-    end;
+    else
+      Exit(TEncoding.Default.GetString(FBuffer, 0, LCount));
   end;
 end;
 
@@ -361,25 +333,20 @@ var
   LValue: string;
 begin
   LValue := String.Empty;
-
   Result := TSpinWait.SpinUntil(
     function(): boolean
     var
       LBuffer: string;
     begin
       LBuffer := PeekMessage();
-
       if not LBuffer.IsEmpty() then
         LValue := LValue + LBuffer;
-
        //Let's read it until it dies
        Result := not Parent.IsAlive;
-
        //Read until queue is empty, even if it is dead
        if Result then
          Result := LBuffer.IsEmpty();
     end, ATimeout);
-
   AValue := LValue;
 end;
 
