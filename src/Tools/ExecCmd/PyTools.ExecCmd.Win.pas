@@ -28,6 +28,7 @@
 (* confidential or legal reasons, everyone is free to derive a component  *)
 (* or to generate a diff file to my or other original sources.            *)
 (**************************************************************************)
+
 {$IFNDEF PLATFORM_UNIT}
 unit PyTools.ExecCmd.Win;
 {$ENDIF PLATFORM_UNIT}
@@ -38,7 +39,6 @@ uses
   System.SysUtils, System.Classes, Winapi.Windows, PyTools.ExecCmd;
 
 //Ref: https://docs.microsoft.com/en-us/windows/win32/procthread/creating-a-child-process-with-redirected-input-and-output
-
 type
   TExecCmd = class(TInterfacedObject, IExecCmd)
   private type
@@ -66,7 +66,6 @@ type
     public
       procedure Write(const AValue: string);
     end;
-
   private
     FCmd: string;
     FArg: TArray<string>;
@@ -100,19 +99,19 @@ type
     function GetOutput(): string;
     function GetIsAlive: boolean;
     function GetExitCode: Integer;
-
     procedure RedirectPipes(const ARedirections: TRedirections);
+    // EnvP
+    function CreateEnvBlock(const AEnvP: TArray<string>;
+      const ABuffer: pointer; const ABufferSize: integer): integer;
   public
     constructor Create(const ACmd: string; const AArg, AEnv: TArray<string>);
     destructor Destroy(); override;
-
     function Run(): IExecCmd; overload;
     function Run(out AOutput: string): IExecCmd; overload;
     function Run(const ARedirections: TRedirections): IExecCmd; overload;
-
     function Wait(): Integer;
     procedure Kill();
-
+    class function GetEnvironmentVariables(): TArray<string>;
     property Status: cardinal read GetStatus;
     property IsAlive: boolean read GetIsAlive;
     property ExitCode: Integer read GetExitCode;
@@ -131,6 +130,7 @@ uses
 
 constructor TExecCmd.Create(const ACmd: string; const AArg, AEnv: TArray<string>);
 begin
+  inherited Create();
   FCmd := ACmd;
   FArg := AArg;
   FEnv := AEnv;
@@ -172,10 +172,50 @@ destructor TExecCmd.Destroy;
 begin
   if IsAlive then
     Kill();
-
   CloseHandle(FProcessInfo.hThread);
   CloseHandle(FProcessInfo.hProcess);
   inherited;
+end;
+
+function TExecCmd.CreateEnvBlock(const AEnvP: TArray<string>;
+  const ABuffer: pointer; const ABufferSize: integer): integer;
+begin
+  if not Assigned(FEnv) then
+    Exit(0);
+
+  Result := 0;
+  for var I := Low(AEnvP) to High(AEnvP) do
+    Inc(Result, Length(AEnvP[I]) + 1);
+  Inc(Result);
+
+  if (ABuffer <> nil) and (ABufferSize >= Result) then begin
+    var PBuf := PChar(ABuffer);
+    for var I := Low(AEnvP) to High(AEnvP) do begin
+      StrPCopy(PBuf, AEnvP[I]);
+      Inc(PBuf, Length(AEnvP[I]) + 1);
+    end;
+    // Terminate block with additional #0
+    PBuf^ := #0;
+  end;
+end;
+
+class function TExecCmd.GetEnvironmentVariables: TArray<string>;
+begin
+  var LEnvP: PChar := GetEnvironmentStrings();
+  if not Assigned(LEnvP) then
+    Exit(nil);
+
+  // EnvP strings are #0 separated and list ends with #0#0
+  Result := nil;
+  var LEnvPEntry: PChar := LEnvP;
+  try
+    while LEnvPEntry^ <> #0 do begin
+      Result := Result + [LEnvPEntry];
+      Inc(LEnvPEntry, StrLen(LEnvPEntry) + 1);
+    end;
+  finally
+    FreeEnvironmentStrings(LEnvP);
+  end;
 end;
 
 function TExecCmd.GetExitCode: Integer;
@@ -197,15 +237,11 @@ var
   LOutput: string;
 begin
   LOutput := String.Empty;
-
   if Assigned(FStdOut) then
     FStdOut.ReadAll(LOutput, INFINITE);
-
   Result := LOutput;
-
   if Assigned(FStdErr) then
     FStdErr.ReadAll(LOutput, INFINITE);
-
   Result := Result + LOutput;
 end;
 
@@ -234,7 +270,25 @@ begin
   //Create the process
   var LCmd := FCmd + ' ' + String.Join(' ', FArg);
   UniqueString(LCmd);
-  if not CreateProcess(nil, PWideChar(LCmd), nil, nil, True, 0, nil, nil,
+
+  var LEnvP := nil;
+  var LCreateFlags := 0;
+  if Assigned(FEnv) then begin
+    var LBlockSize := CreateEnvBlock(FEnv, nil, 0);
+    if LBlockSize > 0 then begin
+      LEnvP := StrAlloc(LBlockSize);
+      CreateEnvBlock(FEnv, LEnvP, LBlockSize);
+      LCreateFlags := CREATE_UNICODE_ENVIRONMENT;
+    end;
+  end;
+
+  if not CreateProcess(
+    nil,
+    PWideChar(LCmd), // Process + Argument values
+    nil, nil, True,
+    LCreateFlags, // CreateFlags
+    LEnvP, // Environment parameters
+    nil,
     FStartupInfo, FProcessInfo) then
       RaiseLastOSError();
 
@@ -248,11 +302,9 @@ begin
   if (TRedirect.stdout in ARedirections) then begin
     if not CreatePipe(FStdOutPipeRead, FStdOutPipeWrite, @FSecurityAttributes, 0) then
       RaiseLastOSError();
-
     //Ensure the read handle to the pipe for STDOUT is not inherited
     //if not SetHandleInformation(FStdOutPipeRead, HANDLE_FLAG_INHERIT, 0) then
     //  RaiseLastOSError();
-
     //Redirect to our pipe
     FStartupInfo.hStdOutput := FStdOutPipeWrite;
   end else begin
@@ -263,11 +315,9 @@ begin
   if (TRedirect.stderr in ARedirections) then begin
     if not CreatePipe(FStdErrPipeRead, FStdErrPipeWrite, @FSecurityAttributes, 0) then
       RaiseLastOSError();
-
     //Ensure the read handle to the pipe for STDOUT is not inherited
     //if not SetHandleInformation(FStdOutPipeRead, HANDLE_FLAG_INHERIT, 0) then
     //  RaiseLastOSError();
-
     //Redirect to our pipe
     FStartupInfo.hStdError := FStdErrPipeWrite;
   end else begin
@@ -279,11 +329,9 @@ begin
     //Create a pipe for the child process's STDIN
     if not CreatePipe(FStdInPipeRead, FStdInPipeWrite, @FSecurityAttributes, 0) then
       RaiseLastOSError();
-
     //Ensure the write handle to the pipe for STDIN is not inherited
     //if not SetHandleInformation(FStdInPipeWrite, HANDLE_FLAG_INHERIT, 0) then
     //  RaiseLastOSError();
-
     //Redirect to our pipe
     FStartupInfo.hStdInput := FStdInPipeRead;
   end else begin
@@ -294,18 +342,13 @@ end;
 function TExecCmd.Run(const ARedirections: TRedirections): IExecCmd;
 begin
   RedirectPipes(ARedirections);
-
   if (TRedirect.stdout in ARedirections) then
     FStdOut := TStdReader.Create(Self, FStdOutPipeRead, FStdOutPipeWrite);
-
   if (TRedirect.stderr in ARedirections) then
     FStdErr := TStdReader.Create(Self, FStdErrPipeRead, FStdErrPipeWrite);
-
   if (TRedirect.stdin in ARedirections) then
     FStdIn := TStdWriter.Create(Self, FStdInPipeRead, FStdInPipeWrite);
-
   Execute();
-
   Result := Self;
 end;
 
@@ -325,7 +368,6 @@ begin
   TSpinWait.SpinUntil(function(): boolean begin
     Result := not GetIsAlive();
   end, INFINITE);
-
   Result := GetExitCode();
 end;
 
@@ -360,10 +402,8 @@ var
 begin
   if not PeekNamedPipe(ReadPipe, nil, 0, nil, @LBytesRead, nil) or (LBytesRead = 0) then
     Exit(String.Empty);
-
   if not ReadFile(ReadPipe, LBuffer, BUFFSIZE, LBytesRead, nil) then
     RaiseLastOSError();
-
   if (LBytesRead > 0) then begin
     SetString(Result, LBuffer, LBytesRead);
   end;
@@ -375,25 +415,20 @@ var
   LValue: string;
 begin
   LValue := String.Empty;
-
   Result := TSpinWait.SpinUntil(
     function(): boolean
     var
       LBuffer: string;
     begin
       LBuffer := PeekMessage();
-
       if not LBuffer.IsEmpty() then
         LValue := LValue + LBuffer;
-
        //Let's read it until it dies
        Result := not Parent.IsAlive;
-
        //Read until queue is empty, even if it is dead
        if Result then
          Result := LBuffer.IsEmpty();
     end, ATimeout);
-
   AValue := LValue;
 end;
 

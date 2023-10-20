@@ -98,11 +98,16 @@ type
   public
     constructor Create(const ACmd: string; AArg, AEnv: TArray<string>);
     destructor Destroy(); override;
+
     function Run(): IExecCmd; overload;
     function Run(out AOutput: string): IExecCmd; overload;
     function Run(const ARedirections: TRedirections): IExecCmd; overload;
+
     procedure Kill();
     function Wait(): Integer;
+
+    class function GetEnvironmentVariables(): TArray<string>;
+
     property IsAlive: boolean read GetIsAlive;
     property ExitCode: Integer read GetExitCode;
   end;
@@ -136,6 +141,17 @@ begin
   __close(FStdErrPipe.ReadDes);
   __close(FStdInPipe.WriteDes);
   inherited;
+end;
+
+class function TExecCmd.GetEnvironmentVariables: TArray<string>;
+begin
+  Result := nil;
+
+  var LEnviron := environ();
+  while Assigned(LEnviron) do begin
+    Result := Result + [String(environ^)];
+    Inc(LEnviron);
+  end;
 end;
 
 function TExecCmd.GetExitCode: Integer;

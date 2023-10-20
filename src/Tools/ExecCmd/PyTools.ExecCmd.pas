@@ -57,30 +57,25 @@ type
     function GetStdIn(): IStdWriter;
     function GetStdErr(): IStdReader;
     function GetOutput(): string;
-
     function GetExitCode: Integer;
     function GetIsAlive: boolean;
-
     function Run(): IExecCmd; overload;
     function Run(out AOutput: string): IExecCmd; overload;
     function Run(const ARedirections: TRedirections): IExecCmd; overload;
-
     procedure Kill();
     function Wait(): Integer; overload;
-
     property StdOut: IStdReader read GetStdOut;
     property StdIn: IStdWriter read GetStdIn;
     property StdErr: IStdReader read GetStdErr;
-
     property Output: string read GetOutput;
-
     property IsAlive: boolean read GetIsAlive;
     property ExitCode: Integer read GetExitCode;
   end;
 
   TExecCmdService = class
   public
-    class function Cmd(const ACmd: string; const AArg, AEnv: TArray<string>): IExecCmd; overload;
+    class function Cmd(const ACmd: string; const AArg, AEnv: TArray<string>;
+      const AInheritEnvP: boolean = {$IFDEF MSWINDOWS}true{$ELSE}false{$ENDIF MSWINDOWS}): IExecCmd; overload;
     class function Cmd(const ACmd: string; const AArg: TArray<string>): IExecCmd; overload;
   end;
 
@@ -96,9 +91,13 @@ uses
 
 { TExecCmdService }
 
-class function TExecCmdService.Cmd(const ACmd: string; const AArg, AEnv: TArray<string>): IExecCmd;
+class function TExecCmdService.Cmd(const ACmd: string; const AArg,
+  AEnv: TArray<string>; const AInheritEnvP: boolean): IExecCmd;
 begin
-  Result := TExecCmd.Create(ACmd, AArg, AEnv);
+  if Assigned(AEnv) and AInheritEnvP then
+    Result := TExecCmd.Create(ACmd, AArg, AEnv + TExecCmd.GetEnvironmentVariables())
+  else
+    Result := TExecCmd.Create(ACmd, AArg, AEnv)
 end;
 
 class function TExecCmdService.Cmd(const ACmd: string;
