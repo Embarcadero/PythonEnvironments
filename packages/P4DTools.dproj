@@ -192,6 +192,9 @@
         <DCCReference Include="..\src\Tools\ExecCmd\PyTools.ExecCmd.pas"/>
         <DCCReference Include="..\src\Tools\ExecCmd\PyTools.ExecCmd.Platform.pas"/>
         <DCCReference Include="..\src\Tools\PyTools.Exception.pas"/>
+        <DCCReference Include="..\src\Tools\ExecCmd\StdIO\PyTools.ExecCmd.StdIO.Pipe.pas"/>
+        <DCCReference Include="..\src\Tools\ExecCmd\StdIO\PyTools.ExecCmd.StdIO.Null.pas"/>
+        <DCCReference Include="..\src\Tools\ExecCmd\StdIO\PyTools.ExecCmd.StdIO.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>

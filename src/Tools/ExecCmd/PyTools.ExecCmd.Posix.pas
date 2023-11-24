@@ -39,58 +39,31 @@ uses
   System.SysUtils,
   Posix.Base, Posix.Fcntl, Posix.Unistd, Posix.SysWait, Posix.Stdlib,
   Posix.Stdio, Posix.SysTypes, Posix.Signal, Posix.Errno, Posix.SysStat,
-  Posix.String_,
+  Posix.String_, Posix.Dlfcn,
   PyTools.ExecCmd;
 
 type
   TStreamHandle = pointer;
 
   TExecCmd = class(TInterfacedObject, IExecCmd)
-  private type
-    TStdBase = class(TInterfacedObject)
-    protected
-      Parent: TExecCmd;
-      PipeDescriptor: TPipeDescriptors;
-    public
-      constructor Create(const AParent: TExecCmd; const APipeDescriptor: TPipeDescriptors);
-    end;
-
-    TStdReader = class(TStdBase, IStdReader)
-    private
-      const BUFFER_SIZE = 512;
-    private
-      FBuffer: TBytes;
-      function PeekMessage(): string;
-    public
-      constructor Create(const AParent: TExecCmd; const APipeDescriptor: TPipeDescriptors);
-      function ReadNext: string;
-      function ReadAll(): string; overload;
-      function ReadAll(out AValue: string; const ATimeout: cardinal): boolean; overload;
-    end;
-
-    TStdWriter = class(TStdBase, IStdWriter)
-    private
-      procedure PushStdIn(const AValue: string);
-    public
-      procedure Write(const AValue: string);
-    end;
   private  
     FCmd: string;
     FArg: TArray<string>;
     FEnv: TArray<string>;
     FPid: Integer;
-    FStdOutPipe: TPipeDescriptors;
-    FStdErrPipe: TPipeDescriptors;
-    FStdInPipe: TPipeDescriptors;
     FExitCode: integer;
     //Std reader and writer
     FStdIn: IStdWriter;
     FStdOut: IStdReader;
     FStdErr: IStdReader;
+  private
+    procedure AfterCreateSubprocess(const APId: integer);
+    procedure Execute();
   protected
     function GetStdOut(): IStdReader;
     function GetStdIn(): IStdWriter;
     function GetStdErr(): IStdReader;
+    function GetOutputBytes(): TBytes;
     function GetOutput(): string;
     function GetIsAlive: boolean;
     function GetExitCode: Integer;
@@ -99,7 +72,10 @@ type
     constructor Create(const ACmd: string; AArg, AEnv: TArray<string>);
     destructor Destroy(); override;
 
+    function Config(const AExecCmd: TProc<IExecCmd>): IExecCmd;
+
     function Run(): IExecCmd; overload;
+    function Run(out AOutput: TBytes): IExecCmd; overload;
     function Run(out AOutput: string): IExecCmd; overload;
     function Run(const ARedirections: TRedirections): IExecCmd; overload;
 
@@ -115,14 +91,26 @@ type
 implementation
 
 uses
+  System.Rtti,
   System.IOUtils,
   System.SyncObjs,
-  PyTools.Exception;
+  System.Generics.Collections,
+  PyTools.Exception,
+  PyTools.ExecCmd.StdIO,
+  PyTools.ExecCmd.StdIO.Null,
+  PyTools.ExecCmd.StdIO.Pipe;
 
 const
   INITIAL_EXIT_CODE = -999;
 
 { TExecCmd }
+
+function TExecCmd.Config(const AExecCmd: TProc<IExecCmd>): IExecCmd;
+begin
+  if Assigned(AExecCmd) then
+    AExecCmd(Self);
+  Result := Self;
+end;
 
 constructor TExecCmd.Create(const ACmd: string; AArg, AEnv: TArray<string>);
 begin
@@ -137,10 +125,54 @@ destructor TExecCmd.Destroy;
 begin
   if IsAlive then
     Kill();
-  __close(FStdOutPipe.ReadDes);
-  __close(FStdErrPipe.ReadDes);
-  __close(FStdInPipe.WriteDes);
   inherited;
+end;
+
+procedure TExecCmd.Execute;
+var
+  LMarshaller: TMarshaller;
+  LArg, LEnv: array of PAnsiChar;
+  I: Integer;
+begin
+  FPid := fork();
+
+  if (FPid < 0) then
+    raise EForkFailed.Create('Failed to fork process.');
+
+  AfterCreateSubprocess(FPId);
+
+  if (FPid = 0) then begin
+    //https://man7.org/linux/man-pages/man2/execve.2.html
+    //argv is an array of pointers to strings passed to the new program
+    //as its command-line arguments. By convention, THE FIRST OF THESE
+    //STRINGS (i.e., argv[0]) SHOULD CONTAIN THE FILENAME ASSOCIATED
+    //WITH THE FILE BEING EXECUTED. The argv array must be terminated
+    //by a NULL pointer. (Thus, in the new program, argv[argc] will be
+    //NULL.)
+
+    // Child process from here
+
+    // Make argv
+    SetLength(LArg, Length(FArg) + 1);
+    for I := Low(FArg) to High(FArg) do
+      LArg[I] := LMarshaller.AsAnsi(PWideChar(FArg[I]) + #0).ToPointer();
+    LArg[High(LArg)] := PAnsiChar(nil);
+
+    // Make envp
+    SetLength(LEnv, Length(FEnv) + 1);
+    for I := Low(FEnv) to High(FEnv) do
+      LEnv[I] := LMarshaller.AsAnsi(PWideChar(FEnv[I]) + #0).ToPointer();
+    LEnv[High(LEnv)] := PAnsiChar(nil);
+
+    // execve requires the full path of the file being executed
+    // enhance this implementation following https://man7.org/linux/man-pages/man3/execvp.3.html
+    if execve(LMarshaller.AsAnsi(PWideChar(FCmd)).ToPointer(), PPAnsiChar(LArg), PPAnsiChar(LEnv)) = -1 then begin
+      Halt(errno);
+    end else
+      Halt(EXIT_FAILURE);
+  end else if (FPid > 0) then begin
+    // Parent process from here
+  end;
 end;
 
 class function TExecCmd.GetEnvironmentVariables: TArray<string>;
@@ -149,7 +181,7 @@ begin
 
   var LEnviron := environ();
   while Assigned(LEnviron) do begin
-    Result := Result + [String(environ^)];
+    Result := Result + [String(LEnviron^)];
     Inc(LEnviron);
   end;
 end;
@@ -169,20 +201,32 @@ begin
     
   LWaitedPid := waitpid(FPid, @LStatus, WNOHANG);
   if (LWaitedPid = -1) then
-    raise EWaitFailed.Create('Failed waiting for proess.')
-  else if (LWaitedPid = 0) then
-    Exit(true)
-  else begin    
-    if WIFEXITED(LStatus) then
-      FExitCode := WEXITSTATUS(LStatus)
-    else if WIFSIGNALED(LStatus) then
-      FExitCode := WTERMSIG(LStatus)
-    else if WIFSTOPPED(LStatus) then
-      FExitCode := WSTOPSIG(LStatus)
-    else
-      FExitCode := EXIT_FAILURE;
-  end;
+    raise EWaitFailed.Create('Failed waiting for process.');
+
+  if (LWaitedPid = 0) then
+    Exit(true);
+
+  if WIFEXITED(LStatus) then
+    FExitCode := WEXITSTATUS(LStatus)
+  else if WIFSIGNALED(LStatus) then
+    FExitCode := WTERMSIG(LStatus)
+  else if WIFSTOPPED(LStatus) then
+    FExitCode := WSTOPSIG(LStatus)
+  else
+    FExitCode := EXIT_FAILURE;
+
   Result := false;
+end;
+
+function TExecCmd.GetOutputBytes: TBytes;
+var
+  LOutput: TBytes;
+begin
+  LOutput := nil;
+  FStdOut.ReadAllBytes(LOutput, INFINITE);
+  Result := LOutput;
+  FStdErr.ReadAllBytes(LOutput, INFINITE);
+  Result := Result + LOutput;
 end;
 
 function TExecCmd.GetOutput: string;
@@ -190,11 +234,9 @@ var
   LOutput: string;
 begin
   LOutput := String.Empty;
-  if Assigned(FStdOut) then
-    FStdOut.ReadAll(LOutput, INFINITE);
+  FStdOut.ReadAll(LOutput, INFINITE);
   Result := LOutput;
-  if Assigned(FStdErr) then
-    FStdErr.ReadAll(LOutput, INFINITE);
+  FStdErr.ReadAll(LOutput, INFINITE);
   Result := Result + LOutput;
 end;
 
@@ -213,67 +255,42 @@ begin
   Result := FStdIn;
 end;
 
-procedure TExecCmd.RedirectPipes(const ARedirections: TRedirections);
-var
-  LMarshaller: TMarshaller;
-  LArg, LEnv: array of PAnsiChar;
-  I: Integer;
+procedure TExecCmd.AfterCreateSubprocess(const APId: integer);
 begin
-  //#define PARENT_READ read_pipe[0]
-  //#define PARENT_WRITE write_pipe[1]
-  //#define CHILD_WRITE read_pipe[1]
-  //#define CHILD_READ  write_pipe[0]
-  if (pipe(FStdOutPipe) = -1) or (pipe(FStdErrPipe) = -1) or (pipe(FStdInPipe) = -1) then
-    raise EPipeFailed.Create('Failed to create pipe.');
-  FPid := fork();
-  if (FPid < 0) then
-    raise EForkFailed.Create('Failed to fork process.')
-  else if (FPid = 0) then begin
-    while ((dup2(FStdOutPipe.WriteDes, STDOUT_FILENO) = -1) and (errno = EINTR)) do;
-    while ((dup2(FStdErrPipe.WriteDes, STDERR_FILENO) = -1) and (errno = EINTR)) do;
-    while ((dup2(FStdInPipe.ReadDes, STDIN_FILENO) = -1) and (errno = EINTR)) do;
-    __close(FStdOutPipe.WriteDes);
-    __close(FStdOutPipe.ReadDes);
-    __close(FStdErrPipe.WriteDes);
-    __close(FStdErrPipe.ReadDes);
-    __close(FStdInPipe.ReadDes);
-    //https://man7.org/linux/man-pages/man2/execve.2.html
-    //argv is an array of pointers to strings passed to the new program
-    //as its command-line arguments. By convention, THE FIRST OF THESE
-    //STRINGS (i.e., argv[0]) SHOULD CONTAIN THE FILENAME ASSOCIATED
-    //WITH THE FILE BEING EXECUTED. The argv array must be terminated
-    //by a NULL pointer. (Thus, in the new program, argv[argc] will be
-    //NULL.)
-    SetLength(LArg, Length(FArg) + 1);
-    for I := Low(FArg) to High(FArg) do
-      LArg[I] := LMarshaller.AsAnsi(PWideChar(FArg[I]) + #0).ToPointer();
-    LArg[High(LArg)] := PAnsiChar(nil);
-    SetLength(LEnv, Length(FEnv) + 1);
-    for I := Low(FEnv) to High(FEnv) do
-      LEnv[I] := LMarshaller.AsAnsi(PWideChar(FEnv[I]) + #0).ToPointer();
-    LEnv[High(LEnv)] := PAnsiChar(nil);
-    if execve(LMarshaller.AsAnsi(PWideChar(FCmd)).ToPointer(), PPAnsiChar(LArg), PPAnsiChar(LEnv)) = -1 then begin
-      Halt(errno);
-    end else
-      Halt(EXIT_FAILURE);
-  end else if (FPid > 0) then begin
-    __close(FStdOutPipe.WriteDes);
-    __close(FStdErrPipe.WriteDes);
-    __close(FStdInPipe.ReadDes);
-    __close(FStdInPipe.WriteDes);
-  end;
+  FStdIn.PID := APId;
+  FStdOut.PID := APId;
+  FStdErr.PID := APId;
+end;
+
+procedure TExecCmd.RedirectPipes(const ARedirections: TRedirections);
+begin
+  if (TRedirect.stdin in ARedirections) then
+    FStdIn := TPipeStdWriter.Create(STDIN_FILENO)
+  else
+    FStdIn := TNullStdWriter.Create(STDIN_FILENO);
+
+  if (TRedirect.stdout in ARedirections) then
+    FStdOut := TPipeStdReader.Create(STDOUT_FILENO)
+  else
+    FStdOut := TNullStdReader.Create(STDOUT_FILENO);
+
+  if (TRedirect.stderr in ARedirections) then
+    FStdErr := TPipeStdReader.Create(STDERR_FILENO)
+  else
+    FStdErr := TNullStdReader.Create(STDERR_FILENO);
 end;
 
 function TExecCmd.Run(const ARedirections: TRedirections): IExecCmd;
 begin
   RedirectPipes(ARedirections);
-  if (TRedirect.stdout in ARedirections) then
-    FStdOut := TStdReader.Create(Self, FStdOutPipe);
-  if (TRedirect.stderr in ARedirections) then
-    FStdErr := TStdReader.Create(Self, FStdErrPipe);
-  if (TRedirect.stdin in ARedirections) then
-    FStdIn := TStdWriter.Create(Self, FStdInPipe);
+  Execute();
   Result := Self;
+end;
+
+function TExecCmd.Run(out AOutput: TBytes): IExecCmd;
+begin
+  Result := Run([TRedirect.stdout, TRedirect.stderr]);
+  AOutput := GetOutputBytes();
 end;
 
 function TExecCmd.Run(out AOutput: string): IExecCmd;
@@ -284,7 +301,8 @@ end;
 
 function TExecCmd.Run: IExecCmd;
 begin
-  Result := Run([]);
+  var LRedirections: TRedirections := [];
+  Result := Run(LRedirections);
 end;
 
 procedure TExecCmd.Kill;
@@ -304,91 +322,6 @@ begin
     Result := not GetIsAlive();
   end, INFINITE);
   Result := GetExitCode();
-end;
-
-{ TExecCmd.TStdBase }
-
-constructor TExecCmd.TStdBase.Create(const AParent: TExecCmd;
-  const APipeDescriptor: TPipeDescriptors);
-begin
-  inherited Create();
-  Parent := AParent;
-  PipeDescriptor := APipeDescriptor;
-end;
-
-{ TExecCmd.TStdReader }
-
-constructor TExecCmd.TStdReader.Create(const AParent: TExecCmd;
-  const APipeDescriptor: TPipeDescriptors);
-begin
-  inherited;
-  SetLength(FBuffer, BUFFER_SIZE);
-end;
-
-function TExecCmd.TStdReader.PeekMessage: string;
-var
-  LCount: integer;
-begin
-  while True do begin
-    LCount := __read(PipeDescriptor.ReadDes, @FBuffer[0], BUFFER_SIZE);
-    if (LCount = -1) then begin
-      if (errno = EINTR) then
-        Continue
-      else
-        Exit(String.Empty);
-    end else if (LCount = 0) then
-      Exit(String.Empty)
-    else
-      Exit(TEncoding.Default.GetString(FBuffer, 0, LCount));
-  end;
-end;
-
-function TExecCmd.TStdReader.ReadAll(out AValue: string;
-  const ATimeout: cardinal): boolean;
-var
-  LValue: string;
-begin
-  LValue := String.Empty;
-  Result := TSpinWait.SpinUntil(
-    function(): boolean
-    var
-      LBuffer: string;
-    begin
-      LBuffer := PeekMessage();
-      if not LBuffer.IsEmpty() then
-        LValue := LValue + LBuffer;
-       //Let's read it until it dies
-       Result := not Parent.IsAlive;
-       //Read until queue is empty, even if it is dead
-       if Result then
-         Result := LBuffer.IsEmpty();
-    end, ATimeout);
-  AValue := LValue;
-end;
-
-function TExecCmd.TStdReader.ReadAll: string;
-begin
-  while not ReadAll(Result, INFINITE) do;
-end;
-
-function TExecCmd.TStdReader.ReadNext: string;
-begin
-  Result := PeekMessage();
-end;
-
-{ TExecCmd.TStdWriter }
-
-procedure TExecCmd.TStdWriter.PushStdIn(const AValue: string);
-var
-  LMarshaller: TMarshaller;
-begin
-  __write(PipeDescriptor.WriteDes,
-    LMarshaller.AsUtf8(PWideChar(AValue)).ToPointer(), AValue.Length);
-end;
-
-procedure TExecCmd.TStdWriter.Write(const AValue: string);
-begin
-  PushStdIn(AValue);
 end;
 
 end.
