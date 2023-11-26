@@ -51,7 +51,7 @@ type
   protected
     procedure SetPId(const APId: integer); override;
   protected
-    function CreateHandle(): TPipeDescriptors; override;
+    function CreateDescriptors(): TPipeDescriptors; override;
     function IsAlive: boolean; override;
   public
     destructor Destroy(); override;
@@ -61,7 +61,7 @@ type
   protected
     procedure SetPId(const APId: integer); override;
   protected
-    function CreateHandle(): TPipeDescriptors; override;
+    function CreateDescriptors(): TPipeDescriptors; override;
   public
     destructor Destroy(); override;
   end;
@@ -73,7 +73,7 @@ uses
 
 { TPipeStdReader }
 
-function TPipeStdReader.CreateHandle: TPipeDescriptors;
+function TPipeStdReader.CreateDescriptors: TPipeDescriptors;
 begin
   {$IFDEF POSIX}
   if (pipe(PipeDescriptors) = -1) then
@@ -145,7 +145,7 @@ begin
   inherited;
 end;
 
-function TPipeStdWriter.CreateHandle: TPipeDescriptors;
+function TPipeStdWriter.CreateDescriptors: TPipeDescriptors;
 begin
   {$IFDEF POSIX}
   if (pipe(PipeDescriptors) = -1) then

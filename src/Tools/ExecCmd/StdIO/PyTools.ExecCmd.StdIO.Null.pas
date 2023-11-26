@@ -15,14 +15,14 @@ uses
 type
   TNullStdReader = class(PyTools.ExecCmd.StdIO.TStdReader, IStdReader)
   protected
-    function CreateHandle(): TPipeDescriptors; override;
+    function CreateDescriptors(): TPipeDescriptors; override;
     function PullMessage(out AByteCount: integer): PBytes; override;
     function IsAlive: boolean; override;
   end;
 
   TNullStdWriter = class(PyTools.ExecCmd.StdIO.TStdWriter, IStdWriter)
   protected
-    function CreateHandle(): TPipeDescriptors; override;
+    function CreateDescriptors(): TPipeDescriptors; override;
     procedure PushMessage(const AValue: TBytes); override;
   end;
 
@@ -30,7 +30,7 @@ implementation
 
 { TNullStdReader }
 
-function TNullStdReader.CreateHandle: TPipeDescriptors;
+function TNullStdReader.CreateDescriptors: TPipeDescriptors;
 begin
   {$IFDEF POSIX}
   Result.ReadDes := FileNo;
@@ -53,7 +53,7 @@ end;
 
 { TNullStdWriter }
 
-function TNullStdWriter.CreateHandle: TPipeDescriptors;
+function TNullStdWriter.CreateDescriptors: TPipeDescriptors;
 begin
   {$IFDEF POSIX}
   Result.ReadDes := -1;

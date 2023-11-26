@@ -29,7 +29,7 @@ type
     function GetEncoding: TEncoding;
     procedure SetEncoding(const AEncoding: TEncoding); virtual;
   protected
-    function CreateHandle(): TPipeDescriptors; virtual; abstract;
+    function CreateDescriptors(): TPipeDescriptors; virtual; abstract;
   public
     constructor Create(const AFileNo: cardinal); overload; virtual;
     constructor Create(const AFileNo: cardinal; const AEncoding: TEncoding); overload;
@@ -50,8 +50,11 @@ type
     function ReadAllBytes: TBytes; overload;
     function ReadAllBytes(out AValue: TBytes; const ATimeout: cardinal): boolean; overload;
 
-    function ReadNext: string;
+    function ReadNext(const AEncoding: TEncoding): string; overload;
+    function ReadNext(): string; overload;
+    function ReadAll(const AEncoding: TEncoding): string; overload;
     function ReadAll(): string; overload;
+    function ReadAll(out AValue: string; const ATimeout: cardinal; const AEncoding: TEncoding): boolean; overload;
     function ReadAll(out AValue: string; const ATimeout: cardinal): boolean; overload;
   end;
 
@@ -81,7 +84,7 @@ begin
   inherited Create();
   FFileNo := AFileNo;
   FEncoding := TEncoding.Default;
-  PipeDescriptors := CreateHandle();
+  PipeDescriptors := CreateDescriptors();
 end;
 
 constructor TStdBase.Create(const AFileNo: cardinal; const AEncoding: TEncoding);
@@ -188,7 +191,7 @@ begin
   while not ReadAllBytes(Result, INFINITE) do;
 end;
 
-function TStdReader.ReadNext: string;
+function TStdReader.ReadNext(const AEncoding: TEncoding): string;
 begin
   var LByteCount := 0;
   var LBuff := PullMessage(LByteCount);
@@ -196,24 +199,40 @@ begin
   if not Assigned(LBuff) or (LByteCount = 0) then
     Exit(String.Empty);
 
-  Result := GetEncoding.GetString(LBuff^, Low(LBuff^), LByteCount);
+  Result := AEncoding.GetString(LBuff^, Low(LBuff^), LByteCount);
+end;
+
+function TStdReader.ReadNext: string;
+begin
+  Result := ReadNext(GetEncoding());
 end;
 
 function TStdReader.ReadAll(out AValue: string;
-  const ATimeout: cardinal): boolean;
+  const ATimeout: cardinal; const AEncoding: TEncoding): boolean;
 var
   LBuff: TBytes;
 begin
   Result := ReadAllBytes(LBuff, ATimeout);
   if Assigned(LBuff) then
-    AValue := GetEncoding.GetString(LBuff, Low(LBuff), Length(LBuff))
+    AValue := AEncoding.GetString(LBuff, Low(LBuff), Length(LBuff))
   else
     AValue := String.Empty;
 end;
 
-function TStdReader.ReadAll: string;
+function TStdReader.ReadAll(out AValue: string;
+  const ATimeout: cardinal): boolean;
+begin
+  Result := ReadAll(AValue, ATimeout, GetEncoding());
+end;
+
+function TStdReader.ReadAll(const AEncoding: TEncoding): string;
 begin
   while not ReadAll(Result, INFINITE) do;
+end;
+
+function TStdReader.ReadAll: string;
+begin
+  Result := ReadAll(GetEncoding());
 end;
 
 { TStdWriter }
