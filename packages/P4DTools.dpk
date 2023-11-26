@@ -41,6 +41,9 @@ contains
   PyTools.ExecCmd.Args in '..\src\Tools\ExecCmd\PyTools.ExecCmd.Args.pas',
   PyTools.ExecCmd in '..\src\Tools\ExecCmd\PyTools.ExecCmd.pas',
   PyTools.ExecCmd.Platform in '..\src\Tools\ExecCmd\PyTools.ExecCmd.Platform.pas',
-  PyTools.Exception in '..\src\Tools\PyTools.Exception.pas';
+  PyTools.Exception in '..\src\Tools\PyTools.Exception.pas',
+  PyTools.ExecCmd.StdIO.Pipe in '..\src\Tools\ExecCmd\StdIO\PyTools.ExecCmd.StdIO.Pipe.pas',
+  PyTools.ExecCmd.StdIO.Null in '..\src\Tools\ExecCmd\StdIO\PyTools.ExecCmd.StdIO.Null.pas',
+  PyTools.ExecCmd.StdIO in '..\src\Tools\ExecCmd\StdIO\PyTools.ExecCmd.StdIO.pas';
 
 end.

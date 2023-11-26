@@ -33,22 +33,61 @@ unit PyTools.ExecCmd;
 interface
 
 uses
-  System.SysUtils;
+  System.SysUtils,
+  System.Rtti,
+  {$IFDEF POSIX}
+  Posix.Unistd
+  {$ELSE !POSIX}
+  Winapi.Windows
+  {$ENDIF POSIX};
 
 type
   TRedirect = (stdin, stdout, stderr);
   TRedirections = set of TRedirect;
 
-  IStdReader = interface
+  {$IFDEF POSIX}
+  TPipeDescriptors = Posix.Unistd.TPipeDescriptors;
+  {$ELSE !POSIX}
+  TPipeDescriptors = {packed} record
+    ReadDes: THandle;
+    WriteDes: THandle;
+  end;
+  {$ENDIF POSIX}
+
+  IStdIO = interface
+    ['{33AA00E8-1F4D-4455-A980-522800B58B62}']
+    function GetPipeDescriptors: TPipeDescriptors;
+    function GetPId: integer;
+    procedure SetPId(const PId: integer);
+
+    function GetEncoding: TEncoding;
+    procedure SetEncoding(const AEncoding: TEncoding);
+
+    property PipeDescriptors: TPipeDescriptors read GetPipeDescriptors;
+    property PID: integer read GetPId write SetPId;
+    property Encoding: TEncoding read GetEncoding write SetEncoding;
+  end;
+
+  IStdReader = interface(IStdIO)
     ['{D199DC97-A11B-4284-8F66-2E3C5301C91A}']
-    function ReadNext: string;
+    function ReadNextBytes: TBytes;
+    function ReadAllBytes: TBytes; overload;
+    function ReadAllBytes(out AValue: TBytes; const ATimeout: cardinal): boolean; overload;
+
+    function ReadNext(const AEncoding: TEncoding): string; overload;
+    function ReadNext: string; overload;
+    function ReadAll(const AEncoding: TEncoding): string; overload;
     function ReadAll(): string; overload;
+    function ReadAll(out AValue: string; const ATimeout: cardinal; const AEncoding: TEncoding): boolean; overload;
     function ReadAll(out AValue: string; const ATimeout: cardinal): boolean; overload;
   end;
 
-  IStdWriter = interface
+  IStdWriter = interface(IStdIO)
     ['{47015ED5-97DF-4CD3-8251-FADA71DB4A4A}']
-    procedure Write(const AValue: string);
+    procedure WriteBytes(const AValue: TBytes);
+
+    procedure Write(const AValue: string; const AEncoding: TEncoding); overload;
+    procedure Write(const AValue: string); overload;
   end;
 
   IExecCmd = interface
@@ -56,31 +95,30 @@ type
     function GetStdOut(): IStdReader;
     function GetStdIn(): IStdWriter;
     function GetStdErr(): IStdReader;
+    function GetOutputBytes(): TBytes;
     function GetOutput(): string;
-
     function GetExitCode: Integer;
     function GetIsAlive: boolean;
-
+    function Config(const AExecCmd: TProc<IExecCmd>): IExecCmd;
     function Run(): IExecCmd; overload;
+    function Run(out AOutput: TBytes): IExecCmd; overload;
     function Run(out AOutput: string): IExecCmd; overload;
     function Run(const ARedirections: TRedirections): IExecCmd; overload;
-
     procedure Kill();
     function Wait(): Integer; overload;
-
     property StdOut: IStdReader read GetStdOut;
     property StdIn: IStdWriter read GetStdIn;
     property StdErr: IStdReader read GetStdErr;
-
+    property OutputBytes: TBytes read GetOutputBytes;
     property Output: string read GetOutput;
-
     property IsAlive: boolean read GetIsAlive;
     property ExitCode: Integer read GetExitCode;
   end;
 
   TExecCmdService = class
   public
-    class function Cmd(const ACmd: string; const AArg, AEnv: TArray<string>): IExecCmd; overload;
+    class function Cmd(const ACmd: string; const AArg, AEnv: TArray<string>;
+      const AInheritEnvP: boolean = {$IFDEF MSWINDOWS}true{$ELSE}false{$ENDIF MSWINDOWS}): IExecCmd; overload;
     class function Cmd(const ACmd: string; const AArg: TArray<string>): IExecCmd; overload;
   end;
 
@@ -96,9 +134,13 @@ uses
 
 { TExecCmdService }
 
-class function TExecCmdService.Cmd(const ACmd: string; const AArg, AEnv: TArray<string>): IExecCmd;
+class function TExecCmdService.Cmd(const ACmd: string; const AArg,
+  AEnv: TArray<string>; const AInheritEnvP: boolean): IExecCmd;
 begin
-  Result := TExecCmd.Create(ACmd, AArg, AEnv);
+  if Assigned(AEnv) and AInheritEnvP then
+    Result := TExecCmd.Create(ACmd, AArg, AEnv + TExecCmd.GetEnvironmentVariables())
+  else
+    Result := TExecCmd.Create(ACmd, AArg, AEnv)
 end;
 
 class function TExecCmdService.Cmd(const ACmd: string;

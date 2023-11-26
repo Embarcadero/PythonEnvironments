@@ -192,6 +192,9 @@
         <DCCReference Include="..\src\Tools\ExecCmd\PyTools.ExecCmd.pas"/>
         <DCCReference Include="..\src\Tools\ExecCmd\PyTools.ExecCmd.Platform.pas"/>
         <DCCReference Include="..\src\Tools\PyTools.Exception.pas"/>
+        <DCCReference Include="..\src\Tools\ExecCmd\StdIO\PyTools.ExecCmd.StdIO.Pipe.pas"/>
+        <DCCReference Include="..\src\Tools\ExecCmd\StdIO\PyTools.ExecCmd.StdIO.Null.pas"/>
+        <DCCReference Include="..\src\Tools\ExecCmd\StdIO\PyTools.ExecCmd.StdIO.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>
@@ -212,7 +215,12 @@
                 <Source>
                     <Source Name="MainSource">P4DTools.dpk</Source>
                 </Source>
-                <Excluded_Packages/>
+                <Excluded_Packages>
+                    <Excluded_Packages Name="$(BDSBIN)\bcboffice2k280.bpl">Embarcadero C++Builder Office 2000 Servers Package</Excluded_Packages>
+                    <Excluded_Packages Name="$(BDSBIN)\bcbofficexp280.bpl">Embarcadero C++Builder Office XP Servers Package</Excluded_Packages>
+                    <Excluded_Packages Name="$(BDSBIN)\dcloffice2k280.bpl">Microsoft Office 2000 Sample Automation Server Wrapper Components</Excluded_Packages>
+                    <Excluded_Packages Name="$(BDSBIN)\dclofficexp280.bpl">Microsoft Office XP Sample Automation Server Wrapper Components</Excluded_Packages>
+                </Excluded_Packages>
             </Delphi.Personality>
             <Platforms>
                 <Platform value="Android">True</Platform>
