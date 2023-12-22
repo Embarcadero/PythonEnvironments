@@ -41,7 +41,6 @@ contains
   PyEnvironment.Local in '..\src\PyEnvironment.Local.pas',
   PyEnvironment.Embeddable in '..\src\Embeddable\PyEnvironment.Embeddable.pas',
   PyEnvironment.Embeddable.Res in '..\src\Embeddable\Res\PyEnvironment.Embeddable.Res.pas',
-  PyEnvironment.Embeddable.Res.Python37 in '..\src\Embeddable\Res\PyEnvironment.Embeddable.Res.Python37.pas',
   PyEnvironment.Embeddable.Res.Python38 in '..\src\Embeddable\Res\PyEnvironment.Embeddable.Res.Python38.pas',
   PyEnvironment.Embeddable.Res.Python39 in '..\src\Embeddable\Res\PyEnvironment.Embeddable.Res.Python39.pas',
   PyEnvironment.Embeddable.Res.Python310 in '..\src\Embeddable\Res\PyEnvironment.Embeddable.Res.Python310.pas',

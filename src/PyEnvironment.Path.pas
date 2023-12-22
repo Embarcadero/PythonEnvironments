@@ -77,9 +77,15 @@ class function TPyEnvironmentPath.ResolvePath(const APath: string): string;
   begin
     {$IFDEF ANDROID}
     Result := TPath.GetDocumentsPath();
+    {$ELSEIF DEFINED(IOS64)}
+    Result := TPath.GetAppPath();
+    {$ELSEIF DEFINED(OSX)}
+    Result := TPath.Combine(
+      TDirectory.GetParent(TPath.GetDirectoryName(GetModuleName(HInstance))),
+      'Resources');
     {$ELSE}
     Result := TPath.GetDirectoryName(GetModuleName(HInstance));
-    {$ENDIF}
+    {$IFEND}
   end;
 
 begin
@@ -95,12 +101,10 @@ begin
   //Replace the EMBEDDABLES_PATH variable with the platform specific path
   {$IFDEF ANDROID}
   Result := Result.Replace(EMBEDDABLES_PATH, TPath.GetDocumentsPath());
+  {$ELSEIF DEFINED(IOS64)}
+  Result := Result.Replace(EMBEDDABLES_PATH, GetRootPath());
   {$ELSEIF DEFINED(MACOS)}
-  Result := Result.Replace(
-    EMBEDDABLES_PATH,
-    TPath.Combine(
-      TDirectory.GetParent(TPath.GetDirectoryName(GetModuleName(HInstance))),
-      'Resources'));
+  Result := Result.Replace(EMBEDDABLES_PATH, GetRootPath());
   {$ELSE}
   Result := Result.Replace(EMBEDDABLES_PATH, GetRootPath());
   {$ENDIF}

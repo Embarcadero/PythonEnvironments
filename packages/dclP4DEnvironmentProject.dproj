@@ -113,9 +113,19 @@ $(PostBuildEvent)]]></PostBuildEvent>
         <DCCReference Include="..\src\Project\IDE\PyEnvironment.Project.IDE.Helper.pas"/>
         <DCCReference Include="..\src\Project\IDE\PyEnvironment.Project.IDE.ManagerMenu.pas"/>
         <DCCReference Include="..\src\Project\IDE\PyEnvironment.Project.IDE.Menu.pas"/>
-        <DCCReference Include="..\src\Project\IDE\PyEnvironment.Project.IDE.Deploy.pas"/>
+        <DCCReference Include="..\src\Project\IDE\Deploy\PyEnvironment.Project.IDE.Deploy.pas"/>
         <DCCReference Include="..\src\Project\IDE\PyEnvironment.Project.IDE.Registration.pas"/>
         <DCCReference Include="..\src\Project\IDE\PyEnvironment.Project.IDE.Types.pas"/>
+        <DCCReference Include="..\src\Project\IDE\Deploy\iOS\PyEnvironment.Project.IDE.Deploy.iOS.pas"/>
+        <DCCReference Include="..\src\Project\IDE\Deploy\iOS\PyEnvironment.Project.IDE.Deploy.iOSSimARM64.pas"/>
+        <DCCReference Include="..\src\Project\IDE\Deploy\iOS\PyEnvironment.Project.IDE.Deploy.iOSDevice64.pas"/>
+        <DCCReference Include="..\src\Project\IDE\Deploy\PyEnvironment.Project.IDE.Deploy.Platform.pas"/>
+        <DCCReference Include="..\src\Project\IDE\Deploy\OSX\PyEnvironment.Project.IDE.Deploy.OSX.pas"/>
+        <DCCReference Include="..\src\Project\IDE\Deploy\OSX\PyEnvironment.Project.IDE.Deploy.OSX64.pas"/>
+        <DCCReference Include="..\src\Project\IDE\Deploy\OSX\PyEnvironment.Project.IDE.Deploy.OSXARM64.pas"/>
+        <DCCReference Include="..\src\Project\IDE\Deploy\Android\PyEnvironment.Project.IDE.Deploy.Android.pas"/>
+        <DCCReference Include="..\src\Project\IDE\Deploy\Android\PyEnvironment.Project.IDE.Deploy.AndroidARM.pas"/>
+        <DCCReference Include="..\src\Project\IDE\Deploy\Android\PyEnvironment.Project.IDE.Deploy.AndroidARM64.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>

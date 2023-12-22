@@ -54,7 +54,7 @@ type
     class function BuildPythonVersionConditional(const APythonVersion: string): string; static;
   public
     class procedure AddDeployFile(const AProject: IOTAProject; const AConfig: TPyEnvironmentProjectConfig; const ADeployFile: TPyEnvironmentDeployFile); static;
-    class procedure RemoveDeployFile(const AProject: IOTAProject; const AConfig: TPyEnvironmentProjectConfig; const APlatform: TPyEnvironmentProjectPlatform; ALocalFileName: string; const ARemoteDir: string); static;
+    class procedure RemoveDeployFile(const AProject: IOTAProject; const AConfig: TPyEnvironmentProjectConfig; const APlatform: TPyEnvironmentProjectPlatform; ALocalFileName: string; const ARemoteDir: string; const AUpdateLocalFileName: boolean = true); static;
     class procedure RemoveDeployFilesOfClass(const AProject: IOTAProject); overload; static;
     class procedure RemoveDeployFilesOfClass(const AProject: IOTAProject; const AConfig: TPyEnvironmentProjectConfig; const APlatform: TPyEnvironmentProjectPlatform); overload; static;
     class procedure RemoveUnexpectedDeployFilesOfClass(const AProject: IOTAProject; const AConfig: TPyEnvironmentProjectConfig; const APlatform: TPyEnvironmentProjectPlatform; const AAllowedFiles: TArray<TPyEnvironmentDeployFile>); static;
@@ -176,10 +176,15 @@ begin
   if (ADeployFile.LocalFileName <> '') and Supports(AProject, IProjectDeployment, LProjectDeployment)  then begin
     LConfigName := AConfig.ToString;
     LPlatformName := ADeployFile.Platform.ToString;
-    LLocalFileName := TPath.Combine(TPyEnvironmentProjectDeploy.Path, ADeployFile.LocalFileName);
+
+    if ADeployFile.UpdateLocalFileName then
+      LLocalFileName := TPath.Combine(TPyEnvironmentProjectDeploy.Path, ADeployFile.LocalFileName)
+    else
+      LLocalFilename := ADeployFile.LocalFileName;
+
     LDeployFileExistence := GetDeployFileExistence(LProjectDeployment, LLocalFileName, ADeployFile.RemotePath, LPlatformName, LConfigName);
     if LDeployFileExistence = TDeployFileExistence.NeedReplaced then
-      RemoveDeployFile(AProject, AConfig, ADeployFile.Platform, ADeployFile.LocalFileName, ADeployFile.RemotePath);
+      RemoveDeployFile(AProject, AConfig, ADeployFile.Platform, ADeployFile.LocalFileName, ADeployFile.RemotePath, ADeployFile.UpdateLocalFileName);
     if CanDeployFile(LDeployFileExistence) then
       DoAddDeployFile(LProjectDeployment, LLocalFileName, LPlatformName, LConfigName);
   end;
@@ -260,7 +265,7 @@ end;
 class procedure TPyEnvironmentProjectHelper.RemoveDeployFile(
   const AProject: IOTAProject; const AConfig: TPyEnvironmentProjectConfig;
   const APlatform: TPyEnvironmentProjectPlatform; ALocalFileName: string;
-  const ARemoteDir: string);
+  const ARemoteDir: string; const AUpdateLocalFileName: boolean);
 var
   LProjectDeployment: IProjectDeployment;
   LFiles: TDictionary<string, IProjectDeploymentFile>.TValueCollection;
@@ -269,7 +274,11 @@ var
   LRemoveFiles: TArray<IProjectDeploymentFile>;
 begin
   if (ALocalFileName <> '') and Supports(AProject, IProjectDeployment, LProjectDeployment) then begin
-    ALocalFileName := TPath.Combine(TPyEnvironmentProjectDeploy.Path, ALocalFileName);
+    if AUpdateLocalFileName then
+      ALocalFileName := TPath.Combine(TPyEnvironmentProjectDeploy.Path, ALocalFileName)
+    else
+      ALocalFileName := ALocalFileName;
+
     LProjectDeployment.RemoveFile(AConfig.ToString, APlatform.ToString, ALocalFileName);
     LFiles := LProjectDeployment.Files;
     if Assigned(LFiles) then begin

@@ -43,6 +43,7 @@ type
   private
     FPythonVersion: string;
     FHome: string;
+    FPath: string;
     FSharedLibrary: string;
     FExecutable: string;
   public
@@ -51,6 +52,7 @@ type
   published
     property PythonVersion: string read FPythonVersion write FPythonVersion;
     property Home: string read FHome write FHome;
+    property Path: string read FPath write FPath;
     property SharedLibrary: string read FSharedLibrary write FSharedLibrary;
     property Executable: string read FExecutable write FExecutable;
   end;
@@ -63,16 +65,22 @@ type
 implementation
 
 uses
-  System.IOUtils;
+  System.IOUtils,
+  PyEnvironment.Path;
 
 { TPyDistribution }
 
 function TPyDistribution.IsAvailable: boolean;
 begin
   Result := not FPythonVersion.IsEmpty()
-    and TDirectory.Exists(FHome)
-    and TFile.Exists(FSharedLibrary)
-    and TFile.Exists(FExecutable)
+    and TDirectory.Exists(TPyEnvironmentPath.ResolvePath(FHome))
+    and TFile.Exists(TPyEnvironmentPath.ResolvePath(FSharedLibrary))
+    {$IFNDEF IOS64}
+    and TFile.Exists(TPyEnvironmentPath.ResolvePath(FExecutable))
+    {$ELSE}
+    and TDirectory.Exists(TPyEnvironmentPath.ResolvePath(FPath))
+    {$ENDIF}
+    ;
 end;
 
 function TPyDistribution.Setup(const ACancelation: ICancelation): boolean;

@@ -38,9 +38,19 @@ contains
   PyEnvironment.Project.IDE.Helper in '..\src\Project\IDE\PyEnvironment.Project.IDE.Helper.pas',
   PyEnvironment.Project.IDE.ManagerMenu in '..\src\Project\IDE\PyEnvironment.Project.IDE.ManagerMenu.pas',
   PyEnvironment.Project.IDE.Menu in '..\src\Project\IDE\PyEnvironment.Project.IDE.Menu.pas',
-  PyEnvironment.Project.IDE.Deploy in '..\src\Project\IDE\PyEnvironment.Project.IDE.Deploy.pas',
+  PyEnvironment.Project.IDE.Deploy in '..\src\Project\IDE\Deploy\PyEnvironment.Project.IDE.Deploy.pas',
   PyEnvironment.Project.IDE.Registration in '..\src\Project\IDE\PyEnvironment.Project.IDE.Registration.pas',
-  PyEnvironment.Project.IDE.Types in '..\src\Project\IDE\PyEnvironment.Project.IDE.Types.pas';
+  PyEnvironment.Project.IDE.Types in '..\src\Project\IDE\PyEnvironment.Project.IDE.Types.pas',
+  PyEnvironment.Project.IDE.Deploy.iOS in '..\src\Project\IDE\Deploy\iOS\PyEnvironment.Project.IDE.Deploy.iOS.pas',
+  PyEnvironment.Project.IDE.Deploy.iOSSimARM64 in '..\src\Project\IDE\Deploy\iOS\PyEnvironment.Project.IDE.Deploy.iOSSimARM64.pas',
+  PyEnvironment.Project.IDE.Deploy.iOSDevice64 in '..\src\Project\IDE\Deploy\iOS\PyEnvironment.Project.IDE.Deploy.iOSDevice64.pas',
+  PyEnvironment.Project.IDE.Deploy.Platform in '..\src\Project\IDE\Deploy\PyEnvironment.Project.IDE.Deploy.Platform.pas',
+  PyEnvironment.Project.IDE.Deploy.OSX in '..\src\Project\IDE\Deploy\OSX\PyEnvironment.Project.IDE.Deploy.OSX.pas',
+  PyEnvironment.Project.IDE.Deploy.OSX64 in '..\src\Project\IDE\Deploy\OSX\PyEnvironment.Project.IDE.Deploy.OSX64.pas',
+  PyEnvironment.Project.IDE.Deploy.OSXARM64 in '..\src\Project\IDE\Deploy\OSX\PyEnvironment.Project.IDE.Deploy.OSXARM64.pas',
+  PyEnvironment.Project.IDE.Deploy.Android in '..\src\Project\IDE\Deploy\Android\PyEnvironment.Project.IDE.Deploy.Android.pas',
+  PyEnvironment.Project.IDE.Deploy.AndroidARM in '..\src\Project\IDE\Deploy\Android\PyEnvironment.Project.IDE.Deploy.AndroidARM.pas',
+  PyEnvironment.Project.IDE.Deploy.AndroidARM64 in '..\src\Project\IDE\Deploy\Android\PyEnvironment.Project.IDE.Deploy.AndroidARM64.pas';
 
 end.
 

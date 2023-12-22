@@ -347,7 +347,7 @@ end;
 
 procedure TPyCustomEnvironment.SetPythonVersion(const Value: string);
 begin
-  FPythonVersion := Value;
+  FPythonVersion := Value.Trim();
 end;
 
 procedure TPyCustomEnvironment.DoAutoLoad;
@@ -658,9 +658,13 @@ begin
   try
     FPythonEngine.UseLastKnownVersion := false;
     FPythonEngine.PythonHome := TPyEnvironmentPath.ResolvePath(LDistribution.Home);
-    FPythonEngine.ProgramName := TPyEnvironmentPath.ResolvePath(LDistribution.Executable);
     FPythonEngine.DllPath := TPath.GetDirectoryName(TPyEnvironmentPath.ResolvePath(LDistribution.SharedLibrary));
     FPythonEngine.DllName := TPath.GetFileName(LDistribution.SharedLibrary);
+    {$IFNDEF IOS64}
+    FPythonEngine.ProgramName := TPyEnvironmentPath.ResolvePath(LDistribution.Executable);
+    {$ELSE}
+    FPythonEngine.PythonPath := TPyEnvironmentPath.ResolvePath(LDistribution.Path);
+    {$ENDIF}
     TThread.Synchronize(nil, procedure() begin
       FPythonEngine.LoadDll();
     end);
