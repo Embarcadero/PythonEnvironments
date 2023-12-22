@@ -74,8 +74,11 @@ type
     function ReadAllBytes: TBytes; overload;
     function ReadAllBytes(out AValue: TBytes; const ATimeout: cardinal): boolean; overload;
 
-    function ReadNext: string;
+    function ReadNext(const AEncoding: TEncoding): string; overload;
+    function ReadNext: string; overload;
+    function ReadAll(const AEncoding: TEncoding): string; overload;
     function ReadAll(): string; overload;
+    function ReadAll(out AValue: string; const ATimeout: cardinal; const AEncoding: TEncoding): boolean; overload;
     function ReadAll(out AValue: string; const ATimeout: cardinal): boolean; overload;
   end;
 
