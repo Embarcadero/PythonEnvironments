@@ -33,12 +33,13 @@ unit PyEnvironment.Project.IDE.Types;
 interface
 
 uses
+  System.Generics.Collections,
   DeploymentAPI;
 
 type
   TPyEnvironmentProjectConfig = (Release, Debug);
   TPyEnvironmentProjectConfigs = set of TPyEnvironmentProjectConfig;
-  TPyEnvironmentProjectPlatform = (Unknown, Win32, Win64, Android, Android64, iOSDevice32, iOSDevice64, iOSSimulator, OSX64, OSXARM64, Linux64);
+  TPyEnvironmentProjectPlatform = (Unknown, Win32, Win64, Android, Android64, iOSDevice32, iOSDevice64, iOSSimulator, iOSSimARM64, OSX64, OSXARM64, Linux64);
 
   TPyEvironmentProjectConfigHelper = record helper for TPyEnvironmentProjectConfig
     function ToString: string;
@@ -59,17 +60,20 @@ type
     Required: Boolean;
     Operation: TDeployOperation;
     Condition: string;
+    UpdateLocalFileName: boolean;
 
     constructor Create(const AConfigs: TPyEnvironmentProjectConfigs;
       const APlatform: TPyEnvironmentProjectPlatform;
       const ALocalFileName, ARemotePath: string;
       const ACopyToOutput, ARequired: boolean;
-      const AOperation: TDeployOperation; const ACondition: string); overload;
+      const AOperation: TDeployOperation; const ACondition: string;
+      const AUpdateLocalFileName: boolean = true); overload;
 
     constructor Create(const APlatform: TPyEnvironmentProjectPlatform;
       const ALocalFileName, ARemotePath: string;
       const ACopyToOutput, ARequired: boolean;
-      const AOperation: TDeployOperation; const ACondition: string); overload;
+      const AOperation: TDeployOperation; const ACondition: string;
+      const AUpdateLocalFileName: boolean = true); overload;
   end;
 
 implementation
@@ -82,17 +86,19 @@ uses
 constructor TPyEnvironmentDeployFile.Create(
   const APlatform: TPyEnvironmentProjectPlatform; const ALocalFileName,
   ARemotePath: string; const ACopyToOutput, ARequired: boolean;
-  const AOperation: TDeployOperation; const ACondition: string);
+  const AOperation: TDeployOperation; const ACondition: string;
+  const AUpdateLocalFileName: boolean);
 begin
   Create([Release, Debug], APlatform, ALocalFileName, ARemotePath,
-    ACopyToOutput, ARequired, AOperation, ACondition);
+    ACopyToOutput, ARequired, AOperation, ACondition, AUpdateLocalFileName);
 end;
 
 constructor TPyEnvironmentDeployFile.Create(
   const AConfigs: TPyEnvironmentProjectConfigs;
   const APlatform: TPyEnvironmentProjectPlatform; const ALocalFileName,
   ARemotePath: string; const ACopyToOutput, ARequired: boolean;
-  const AOperation: TDeployOperation; const ACondition: string);
+  const AOperation: TDeployOperation; const ACondition: string;
+  const AUpdateLocalFileName: boolean);
 begin
   Configs := AConfigs;
   &Platform := APlatform;
@@ -102,6 +108,7 @@ begin
   Required := ARequired;
   Operation := AOperation;
   Condition := ACondition;
+  UpdateLocalFileName := AUpdateLocalFileName;
 end;
 
 { TPyEvironmentProjectConfigHelper }

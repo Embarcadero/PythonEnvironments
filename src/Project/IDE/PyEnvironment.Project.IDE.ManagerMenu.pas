@@ -387,10 +387,10 @@ begin
   begin
     LPythonVersion := TPyEnvironmentProjectHelper.CurrentPythonVersion[AProject];
     if AEnabled and (APlatform in TPyEnvironmentProjectDeploy.SUPPORTED_PLATFORMS) then begin
-      for LDeployFile in TPyEnvironmentProjectDeploy.GetDeployFiles(LPythonVersion, APlatform) do
+      for LDeployFile in TPyEnvironmentProjectDeploy.GetDeployFiles(AProject.FileName, LPythonVersion, APlatform) do
         TPyEnvironmentProjectHelper.AddDeployFile(AProject, AConfig, LDeployFile);
     end else begin
-      for LDeployFile in TPyEnvironmentProjectDeploy.GetDeployFiles(LPythonVersion, APlatform) do begin
+      for LDeployFile in TPyEnvironmentProjectDeploy.GetDeployFiles(AProject.FileName, LPythonVersion, APlatform) do begin
         TPyEnvironmentProjectHelper.RemoveDeployFile(
           AProject, AConfig, APlatform, LDeployFile.LocalFileName, LDeployFile.RemotePath);
         if LDeployFile.CopyToOutput then
