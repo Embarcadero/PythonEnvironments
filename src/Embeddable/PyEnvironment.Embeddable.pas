@@ -221,6 +221,9 @@ begin
     //So we recreate it every time
     DeleteFile(ASymlink);
 
+    if not TDirectory.Exists(TPath.GetDirectoryName(ASymlink)) then
+      TDirectory.CreateDirectory(TPath.GetDirectoryName(ASymlink));
+
     if not TFile.CreateSymLink(ASymlink, ATarget) then
       raise ESymlinkFailed.CreateFmt('Failed to create the symlink: %s -> %s', [ASymlink, ATarget]);
   end;
@@ -325,6 +328,8 @@ begin
     Exit(Result)
   else
     Exit(String.Empty);
+  {$ELSEIF DEFINED(IOS64)}
+  Exit(String.Empty);
   {$ELSE}
   Result := TPath.Combine(GetEnvironmentPath(), 'bin');
   {$ENDIF}
@@ -340,7 +345,8 @@ end;
 
 function TPyCustomEmbeddableDistribution.FindSharedLibrary: string;
 
-  function DoSearch(const ALibName: string; const APath: string): TArray<string>;
+  function DoSearch(const ALibName: string; const APath: string;
+    const ASearchOption: TSearchOption = TSearchOption.soTopDirectoryOnly): TArray<string>;
   var
     LFile: string;
     LSearch: string;
@@ -353,7 +359,7 @@ function TPyCustomEmbeddableDistribution.FindSharedLibrary: string;
     Result := TDirectory.GetFiles(
       APath,
       LSearch, //Python <= 3.7 might contain a "m" as sufix.
-      TSearchOption.soTopDirectoryOnly);
+      ASearchOption);
   end;
 
 var
@@ -370,8 +376,19 @@ begin
 
   {$IFDEF MSWINDOWS}
   LPath := GetEnvironmentPath();
+  {$ELSEIF DEFINED(IOS)}
+  // The Python shared library is distributed as framework on iOS
+  LPath := TPyEnvironmentPath.ResolvePath(TPyEnvironmentPath.ENVIRONMENT_PATH);
+  LPath := TPath.Combine(LPath, 'Frameworks', 'libpython3.framework');
   {$ELSEIF DEFINED(MACOS)}
-  //Let's try it in the library path first
+  //Let's try it in the frameworks path first
+  LPath := TPath.Combine(
+    TDirectory.GetParent(TPath.GetDirectoryName(GetModuleName(HInstance))),
+    'Frameworks');
+  LFiles := DoSearch(LLibName, LPath, TSearchOption.soAllDirectories);
+  if LFiles <> nil then
+    Exit(LFiles[Low(LFiles)]);
+
   LPath := TPyEnvironmentPath.ResolvePath(TPyEnvironmentPath.ENVIRONMENT_PATH);
   LFiles := DoSearch(LLibName, LPath);
   if LFiles <> nil then
@@ -400,6 +417,9 @@ begin
   ACancelation.CheckCancelled();
 
   Home := GetEnvironmentPath();
+  {$IFDEF IOS}
+  Path := GetEnvironmentPath();
+  {$ENDIF IOS}
   SharedLibrary := FindSharedLibrary();
   Executable := FindExecutable();
 end;
@@ -553,7 +573,7 @@ begin
     //Look for pattern named files
     for I := Low(PYTHON_KNOWN_VERSIONS) to High(PYTHON_KNOWN_VERSIONS) do begin
       LPythonVersion := PYTHON_KNOWN_VERSIONS[I].RegVersion;
-      LSearchPatter := Format('python3-*-%s*.zip', [LPythonVersion]);
+      LSearchPatter := Format('*python3-*-%s*.zip', [LPythonVersion]);
       LFiles := TDirectory.GetFiles(AEmbedabblesPath, LSearchPatter, TSearchOption.soTopDirectoryOnly);
       if (Length(LFiles) = 0) then
         Continue;
