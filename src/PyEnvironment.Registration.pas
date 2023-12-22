@@ -42,7 +42,6 @@ uses
   //Embed Python
   PyEnvironment.Embeddable,
   //Embed Python as a resource
-  PyEnvironment.Embeddable.Res.Python37,
   PyEnvironment.Embeddable.Res.Python38,
   PyEnvironment.Embeddable.Res.Python39,
   PyEnvironment.Embeddable.Res.Python310,
@@ -60,7 +59,6 @@ begin
     //Embed Python
     TPyEmbeddedEnvironment,
     //Embed Python as a resource
-    TPyEmbeddedResEnvironment37,
     TPyEmbeddedResEnvironment38,
     TPyEmbeddedResEnvironment39,
     TPyEmbeddedResEnvironment310,
