@@ -103,6 +103,7 @@
     <PropertyGroup Condition="'$(Base)'!=''">
         <SanitizedProjectName>P4DEnvironment</SanitizedProjectName>
         <BRCC_OutputDir>..\resources</BRCC_OutputDir>
+        <DCC_CBuilderOutput>All</DCC_CBuilderOutput>
         <DCC_DcuOutput>..\lib\$(Platform)\$(Config)</DCC_DcuOutput>
         <DCC_ExeOutput>.\$(Platform)\$(Config)</DCC_ExeOutput>
         <DCC_Namespace>System;Xml;Data;Datasnap;Web;Soap;$(DCC_Namespace)</DCC_Namespace>
