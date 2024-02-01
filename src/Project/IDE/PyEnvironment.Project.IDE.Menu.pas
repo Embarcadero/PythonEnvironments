@@ -176,8 +176,8 @@ begin
       if TPyEnvironmentProjectHelper.IsPyEnvironmentDefinedForPlatform(AProject, LPlatform, LConfig) then begin
         if LPlatform in TPyEnvironmentProjectDeploy.SUPPORTED_PLATFORMS then begin
           TPyEnvironmentProjectHelper.RemoveUnexpectedDeployFilesOfClass(
-            AProject, LConfig, LPlatform, TPyEnvironmentProjectDeploy.GetDeployFiles(AProject.FileName, LPythonVersion, LPlatform));
-          for LDeployFile in TPyEnvironmentProjectDeploy.GetDeployFiles(AProject.FileName, LPythonVersion, LPlatform) do begin
+            AProject, LConfig, LPlatform, TPyEnvironmentProjectDeploy.GetDeployFiles(AProject.FileName, LPythonVersion, LPlatform, true));
+          for LDeployFile in TPyEnvironmentProjectDeploy.GetDeployFiles(AProject.FileName, LPythonVersion, LPlatform, false) do begin
             if LDeployFile.CopyToOutput then begin
               Assert(LDeployFile.LocalFileName <> '');
               TPyEnvironmentOTAHelper.TryCopyFileToOutputPathOfActiveBuild(AProject,
@@ -186,7 +186,7 @@ begin
             TPyEnvironmentProjectHelper.AddDeployFile(AProject, LConfig, LDeployFile);
           end;
         end else begin
-          for LDeployFile in TPyEnvironmentProjectDeploy.GetDeployFiles(AProject.FileName, LPythonVersion, LPlatform) do
+          for LDeployFile in TPyEnvironmentProjectDeploy.GetDeployFiles(AProject.FileName, LPythonVersion, LPlatform, true) do
             TPyEnvironmentProjectHelper.RemoveDeployFile(
               AProject, LConfig, LPlatform, LDeployFile.LocalFileName, LDeployFile.RemotePath);
           TPyEnvironmentProjectHelper.RemoveDeployFilesOfClass(AProject, LConfig, LPlatform);
@@ -195,7 +195,7 @@ begin
             TPyEnvironmentProjectDeploy.PROJECT_NO_USE_PYTHON]));
         end;
       end else begin
-        for LDeployFile in TPyEnvironmentProjectDeploy.GetDeployFiles(AProject.FileName, LPythonVersion, LPlatform) do
+        for LDeployFile in TPyEnvironmentProjectDeploy.GetDeployFiles(AProject.FileName, LPythonVersion, LPlatform, true) do
           TPyEnvironmentProjectHelper.RemoveDeployFile(
             AProject, LConfig, LPlatform, LDeployFile.LocalFileName, LDeployFile.RemotePath);
         TPyEnvironmentProjectHelper.RemoveDeployFilesOfClass(AProject, LConfig, LPlatform);
@@ -204,7 +204,7 @@ begin
     {$IF CompilerVersion >= 35}
     else if (AMode = TOTACompileMode.cmOTAClean) and TPyEnvironmentProjectHelper.IsPyEnvironmentDefined[AProject] then begin
       LPythonVersion := TPyEnvironmentProjectHelper.CurrentPythonVersion[AProject];
-      for LDeployFile in TPyEnvironmentProjectDeploy.GetDeployFiles(AProject.FileName, LPythonVersion, LPlatform) do
+      for LDeployFile in TPyEnvironmentProjectDeploy.GetDeployFiles(AProject.FileName, LPythonVersion, LPlatform, true) do
         if LDeployFile.CopyToOutput then
           TPyEnvironmentOTAHelper.TryRemoveOutputFileOfActiveBuild(AProject, TPath.GetFileName(LDeployFile.LocalFileName));
     end;
