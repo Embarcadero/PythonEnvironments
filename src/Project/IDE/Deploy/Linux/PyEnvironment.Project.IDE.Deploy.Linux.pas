@@ -1,6 +1,6 @@
 (**************************************************************************)
 (*                                                                        *)
-(* Module:  Unit 'PyEnvironment.Project.IDE.Deploy.iOS'                   *)
+(* Module:  Unit 'PyEnvironment.Project.IDE.Deploy.Linux'                 *)
 (*                                                                        *)
 (*                                  Copyright (c) 2021                    *)
 (*                                  Lucas Moura Belo - lmbelo             *)
@@ -9,7 +9,7 @@
 (*                                                                        *)
 (* Project page:         https://github.com/Embarcadero/PythonEnviroments *)
 (**************************************************************************)
-(*  Functionality:  Make deployables for iOS ARM64 Simulator              *)
+(*  Functionality:  Make deployables for Android                          *)
 (*                                                                        *)
 (*                                                                        *)
 (**************************************************************************)
@@ -28,46 +28,74 @@
 (* confidential or legal reasons, everyone is free to derive a component  *)
 (* or to generate a diff file to my or other original sources.            *)
 (**************************************************************************)
-unit PyEnvironment.Project.IDE.Deploy.iOSSimARM64;
+unit PyEnvironment.Project.IDE.Deploy.Linux;
 
 interface
 
 uses
   System.SysUtils,
+  System.Classes,
+  ToolsAPI,
+  DeploymentAPI,
   PyEnvironment.Project.IDE.Types,
-  PyEnvironment.Project.IDE.Deploy.Platform,
-  PyEnvironment.Project.IDE.Deploy.iOS;
+  PyEnvironment.Project.IDE.Deploy.Platform;
 
 type
-  TPyEnvironmentProjectDeployIOSSimARM64 = class(TPyEnvironmentProjectDeployIOS)
+  TPyEnvironmentProjectDeployLinux = class(TPyEnvironmentProjectDeployPlatform)
   protected
-    function GetPlatform: TPyEnvironmentProjectPlatform; override;
-    function GetPythonBundleName: string; override;
+    function Make(const AInput: TDeployTaskInput): TDeployTaskOutput; override;
+    function Deploy(const AInput: TDeployTaskInput): TDeployTaskOutput; override;
   end;
 
 implementation
 
 uses
-  System.StrUtils;
+  System.IOUtils,
+  PyEnvironment.Project.IDE.Deploy;
 
-{ TPyEnvironmentProjectDeployIOSSimARM64 }
+{ TPyEnvironmentProjectDeployLinux }
 
-function TPyEnvironmentProjectDeployIOSSimARM64.GetPlatform: TPyEnvironmentProjectPlatform;
+function TPyEnvironmentProjectDeployLinux.Make(
+  const AInput: TDeployTaskInput): TDeployTaskOutput;
+var
+  LFileName: string;
 begin
-  Result := TPyEnvironmentProjectPlatform.iOSSimARM64;
+  // Create a minimal Python bundle
+  LFileName := GetBundleMinimalFileName();
+
+  // Always rebuild ??? Not now...
+  if TFile.Exists(LFileName) then
+    Exit(true);
+
+  if not TDirectory.Exists(TPath.GetDirectoryName(LFileName)) then
+    TDirectory.CreateDirectory(TPath.GetDirectoryName(LFileName));
+
+  // Create the minimal distribution for linux - it is only a copy for now
+  TFile.Copy(LocatePythonBundle(), LFileName);
+
+  Result := TFile.Exists(LFileName);
 end;
 
-function TPyEnvironmentProjectDeployIOSSimARM64.GetPythonBundleName: string;
+function TPyEnvironmentProjectDeployLinux.Deploy(
+  const AInput: TDeployTaskInput): TDeployTaskOutput;
+var
+  LFileName: string;
+  LFiles: TPyEnvironmentDeployFiles;
 begin
-  case IndexStr(GetPythonVersion(), ['3.8', '3.9', '3.10', '3.11', '3.12']) of
-    0: Result := 'python3-ios-3.8.18-iphonesimulator.arm64.zip';
-    1: Result := 'python3-ios-3.9.18-iphonesimulator.arm64.zip';
-    2: Result := 'python3-ios-3.10.13-iphonesimulator.arm64.zip';
-    3: Result := 'python3-ios-3.11.6-iphonesimulator.arm64.zip';
-    4: Result := 'python3-ios-3.12.0-iphonesimulator.arm64.zip';
-    else
-      Result := String.Empty;
-  end;
+  LFileName := GetBundleMinimalFileName();
+  if not TFile.Exists(LFileName) then
+    Exit(false);
+
+  LFiles := [
+    TPyEnvironmentDeployFile.Create(GetPlatform(),
+      LFileName.Replace(IncludeTrailingPathDelimiter(GetEnvironmentFolder()), '', []),
+      // Extracts to ./PYVER by default
+      '.\' + GetPythonVersion(),
+      false,  true, TDeployOperation.doUnArchive, '')
+  ];
+
+  Result := Assigned(LFiles);
+  Result.Args.SetFiles(LFiles);
 end;
 
 end.

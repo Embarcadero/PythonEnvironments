@@ -33,23 +33,49 @@ unit PyEnvironment.Project.IDE.Deploy;
 interface
 
 uses
+  System.Classes,
+  System.SysUtils,
+  System.SyncObjs,
+  System.Threading,
   System.Generics.Collections,
+  ToolsAPI,
   DeploymentAPI,
   PyEnvironment.Project.IDE.Types;
 
 type
   TPyEnvironmentProjectDeploy = class
+  strict private type
+    TFilesReadyCallback = TProc<TPyEnvironmentProjectPlatform, TArray<TPyEnvironmentDeployFile>>;
+    TExceptionCallback = TProc<TPyEnvironmentProjectPlatform, Exception>;
+    TTerminatedCallback = TProc;
   strict private
     class var
-      FDeployableFiles: TDictionary<string, TArray<TPyEnvironmentDeployFile>>;
       FAbsolutePath: string;
       FPath: string;
       FPathChecked: Boolean;
+      FLock: TObject;
     class procedure FindPath(out APath, AAbsolutePath: string); static;
     class function GetAbsolutePath: string; static;
     class function GetFound: Boolean; static;
     class function GetPath: string; static;
     class function IsValidPythonEnvironmentDir(const APath: string): Boolean; static;
+
+    class procedure GetPlatformDeployFiles(
+      const AModel: TDeployFilesModel;
+      // OnFilesReady
+      const AFilesReadyCallback: TFilesReadyCallback;
+      // OnException
+      const AExceptionCallback: TExceptionCallback);
+    class function GetPlatformDeployFilesAsync(
+      const AModel: TDeployFilesModel;
+      // OnFilesReady
+      const AFilesReadyCallback: TFilesReadyCallback;
+      // OnException
+      const AExceptionCallback: TExceptionCallback): ITask;
+
+    class procedure BeginExecute(const APythonVersion: string;
+      const ACleaning: boolean); static;
+    class procedure EndExecute(); static;
   public
     const
       DEPLOYMENT_CLASS = 'Python';
@@ -67,9 +93,31 @@ type
     class constructor Create();
     class destructor Destroy();
 
+    class procedure GetDeployFiles(
+      const AProjectName, APythonVersion: string;
+      const APlatforms: TPyEnvironmentProjectPlatforms;
+      const ACleaning: boolean;
+      // OnFilesReady
+      const AFilesReadyCallback: TFilesReadyCallback;
+      // OnException
+      const AExceptionCallback: TExceptionCallback;
+      // OnTerminate
+      const ATerminatedCallback: TTerminatedCallback); overload; static;
+
+    class procedure GetDeployFilesAsync(
+      const AProjectName, APythonVersion: string;
+      const APlatforms: TPyEnvironmentProjectPlatforms;
+      const ACleaning: boolean;
+      // OnFilesReady
+      const AFilesReadyCallback: TFilesReadyCallback;
+      // OnException
+      const AExceptionCallback: TExceptionCallback;
+      // OnTerminate
+      const ATerminatedCallback: TTerminatedCallback);
+
     class function GetDeployFiles(const AProjectName, APythonVersion: string;
-      const APlatform: TPyEnvironmentProjectPlatform)
-    : TArray<TPyEnvironmentDeployFile>; static;
+      const APlatform: TPyEnvironmentProjectPlatform; const ACleaning: boolean)
+    : TArray<TPyEnvironmentDeployFile>; overload; static;
 
     class property AbsolutePath: string read GetAbsolutePath;
     class property Found: Boolean read GetFound;
@@ -79,80 +127,24 @@ type
 implementation
 
 uses
-  System.SysUtils, System.IOUtils, System.StrUtils,
+  System.IOUtils,
+  System.StrUtils,
+  Vcl.Forms,
   PyEnvironment.Project.IDE.Helper,
-  PyEnvironment.Project.IDE.Deploy.Platform,
-  PyEnvironment.Project.IDE.Deploy.AndroidARM,
-  PyEnvironment.Project.IDE.Deploy.AndroidARM64,
-  PyEnvironment.Project.IDE.Deploy.OSX64,
-  PyEnvironment.Project.IDE.Deploy.OSXARM64,
-  PyEnvironment.Project.IDE.Deploy.iOSSimARM64,
-  PyEnvironment.Project.IDE.Deploy.iOSDevice64;
+  PyEnvironment.Project.IDE.Deploy.Intf,
+  PyEnvironment.Project.IDE.Deploy.Factory,
+  PyEnvironment.Project.IDE.Deploy.Manager, PyEnvironment.Project.IDE.Message;
 
 { TPyEnvironmentProject }
 
 class constructor TPyEnvironmentProjectDeploy.Create;
 begin
-  FDeployableFiles := TDictionary<string, TArray<TPyEnvironmentDeployFile>>.Create();
-
-  FDeployableFiles.Add('3.7', [
-    //Windows-win32
-    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Win32, 'python\python3-windows-3.7.9-win32.zip', '.\', True,  True, TDeployOperation.doCopyOnly, ''),
-    //Windows-amd64
-    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Win64, 'python\python3-windows-3.7.9-amd64.zip', '.\', True,  True, TDeployOperation.doCopyOnly, ''),
-    //Linux-x86_64
-    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Linux64, 'python\python3-linux-3.7.16-x86_64.zip', '.\', True,  True, TDeployOperation.doCopyOnly, '')
-  ]);
-
-  FDeployableFiles.Add('3.8', [
-    //Windows-win32
-    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Win32, 'python\python3-windows-3.8.10-win32.zip', '.\', True,  True, TDeployOperation.doCopyOnly, ''),
-    //Windows-amd64
-    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Win64, 'python\python3-windows-3.8.10-amd64.zip', '.\', True,  True, TDeployOperation.doCopyOnly, ''),
-    //Linux-x86_64
-    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Linux64, 'python\python3-linux-3.8.16-x86_64.zip', '.\', True,  True, TDeployOperation.doCopyOnly, '')
-  ]);
-
-  FDeployableFiles.Add('3.9', [
-    //Windows-win32
-    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Win32, 'python\python3-windows-3.9.13-win32.zip', '.\', True,  True, TDeployOperation.doCopyOnly, ''),
-    //Windows-amd64
-    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Win64, 'python\python3-windows-3.9.13-amd64.zip', '.\', True,  True, TDeployOperation.doCopyOnly, ''),
-    //Linux-x86_64
-    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Linux64, 'python\python3-linux-3.9.16-x86_64.zip', '.\', True,  True, TDeployOperation.doCopyOnly, '')
-  ]);
-
-  FDeployableFiles.Add('3.10', [
-    //Windows-win32
-    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Win32, 'python\python3-windows-3.10.9-win32.zip', '.\', True,  True, TDeployOperation.doCopyOnly, ''),
-    //Windows-amd64
-    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Win64, 'python\python3-windows-3.10.9-amd64.zip', '.\', True,  True, TDeployOperation.doCopyOnly, ''),
-    //Linux-x86_64
-    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Linux64, 'python\python3-linux-3.10.9-x86_64.zip', '.\', True,  True, TDeployOperation.doCopyOnly, '')
-  ]);
-
-  FDeployableFiles.Add('3.11', [
-    //Windows-win32
-    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Win32, 'python\python3-windows-3.11.2-win32.zip', '.\', True,  True, TDeployOperation.doCopyOnly, ''),
-    //Windows-amd64
-    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Win64, 'python\python3-windows-3.11.2-amd64.zip', '.\', True,  True, TDeployOperation.doCopyOnly, ''),
-    //Linux-x86_64
-    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Linux64, 'python\python3-linux-3.11.2-x86_64.zip', '.\', True,  True, TDeployOperation.doCopyOnly, '')
-  ]);
-
-  FDeployableFiles.Add('3.12', [
-    //Windows-win32
-    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Win32, 'python\python3-windows-3.12.0-win32.zip', '.\', True,  True, TDeployOperation.doCopyOnly, ''),
-    //Windows-amd64
-    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Win64, 'python\python3-windows-3.12.0-amd64.zip', '.\', True,  True, TDeployOperation.doCopyOnly, ''),
-    //Linux-x86_64
-    TPyEnvironmentDeployFile.Create(TPyEnvironmentProjectPlatform.Linux64, 'python\python3-linux-3.12.0-x86_64.zip', '.\', True,  True, TDeployOperation.doCopyOnly, '')
-  ]);
+  FLock := TObject.Create();
 end;
 
 class destructor TPyEnvironmentProjectDeploy.Destroy;
 begin
-  FDeployableFiles.Free();
+  FLock.Free();
 end;
 
 class procedure TPyEnvironmentProjectDeploy.FindPath(out APath,
@@ -175,39 +167,37 @@ begin
 end;
 
 class function TPyEnvironmentProjectDeploy.GetDeployFiles(const AProjectName,
-  APythonVersion: string; const APlatform: TPyEnvironmentProjectPlatform)
+  APythonVersion: string; const APlatform: TPyEnvironmentProjectPlatform;
+  const ACleaning: boolean)
 : TArray<TPyEnvironmentDeployFile>;
 var
-  I: Integer;
-  LAllFiles: TArray<TPyEnvironmentDeployFile>;
+  LResult: TArray<TPyEnvironmentDeployFile>;
 begin
-  if not MatchText(APythonVersion, PYTHON_VERSIONS) then
-    Exit(nil);
+  LResult := nil;
 
-  var LPlatformClass: TPyEnvironmentProjectDeployPlatformClass := nil;
-  case APlatform of
-    Android: LPlatformClass := TPyEnvironmentProjectDeployAndroidARM;
-    Android64: LPlatformClass := TPyEnvironmentProjectDeployAndroidARM64;
-    iOSDevice64: LPlatformClass := TPyEnvironmentProjectDeployIOSDevice64;
-    iOSSimARM64: LPlatformClass := TPyEnvironmentProjectDeployIOSSimARM64;
-    OSX64: LPlatformClass := TPyEnvironmentProjectDeployOSX64;
-    OSXARM64: LPlatformClass := TPyEnvironmentProjectDeployOSXARM64;
-  end;
+  TPyEnvironmentProjectDeploy.GetDeployFiles(
+    AProjectName,
+    APythonVersion,
+    [APlatform],
+    ACleaning,
+    // OnFilesReady
+    procedure(APlatform: TPyEnvironmentProjectPlatform;
+      AFiles: TArray<TPyEnvironmentDeployFile>)
+    begin
+      LResult := AFiles;
+    end,
+    // OnException
+    procedure(APlatform: TPyEnvironmentProjectPlatform; AException: Exception)
+    begin
+      ShowException(AException, AException.StackInfo);
+    end,
+    // OnTerminate
+    procedure()
+    begin
+      //
+    end);
 
-  if Assigned(LPlatformClass) then
-    Exit(LPlatformClass.GetDeployables(
-      AProjectName,
-      GetAbsolutePath(),
-      APythonVersion
-    ));
-
-  if not FDeployableFiles.ContainsKey(APythonVersion) then
-    Exit(nil);
-
-  LAllFiles := FDeployableFiles[APythonVersion];
-  for I := Low(LAllFiles) to High(LAllFiles) do
-    if LAllFiles[I].Platform = APlatform then
-      Result := Result + [LAllFiles[I]];
+  Result := LResult;
 end;
 
 class function TPyEnvironmentProjectDeploy.GetFound: Boolean;
@@ -221,6 +211,7 @@ begin
     FindPath(FPath, FAbsolutePath);
     FPathChecked := True;
   end;
+
   Result := FPath;
 end;
 
@@ -228,6 +219,143 @@ class function TPyEnvironmentProjectDeploy.IsValidPythonEnvironmentDir(
   const APath: string): Boolean;
 begin
   Result := TDirectory.Exists(APath);
+end;
+
+class procedure TPyEnvironmentProjectDeploy.BeginExecute(
+  const APythonVersion: string; const ACleaning: boolean);
+begin
+  TThread.Synchronize(nil, procedure() begin
+    Application.MainForm.Enabled := false;
+
+    if ACleaning then
+      TPythonMessage.CleaningFiles(APythonVersion)
+    else
+      TPythonMessage.BuildingFiles(APythonVersion);
+
+    TPythonMessage.WarnControlsLocked();
+  end);
+end;
+
+class procedure TPyEnvironmentProjectDeploy.EndExecute;
+begin
+  TThread.Synchronize(nil, procedure() begin
+    Application.MainForm.Enabled := true;
+  end);
+end;
+
+class procedure TPyEnvironmentProjectDeploy.GetPlatformDeployFiles(
+  const AModel: TDeployFilesModel;
+  const AFilesReadyCallback: TFilesReadyCallback;
+  const AExceptionCallback: TExceptionCallback);
+var
+  LFiles: TArray<TPyEnvironmentDeployFile>;
+begin
+  if not MatchText(AModel.PythonVersion, PYTHON_VERSIONS) then
+    Exit();
+
+  try
+    LFiles := TEnvironmentProjectDeployManager.Execute(AModel);
+    // Including files to the deployment list for the given platform
+    AFilesReadyCallback(AModel.Platform, LFiles);
+  except
+    on E: Exception do
+      AExceptionCallback(AModel.Platform, E);
+  end;
+end;
+
+class function TPyEnvironmentProjectDeploy.GetPlatformDeployFilesAsync(
+  const AModel: TDeployFilesModel;
+  const AFilesReadyCallback: TFilesReadyCallback;
+  const AExceptionCallback: TExceptionCallback): ITask;
+begin
+  Result := TTask.Run(procedure() begin
+    GetPlatformDeployFiles(AModel, AFilesReadyCallback, AExceptionCallback)
+  end)
+end;
+
+class procedure TPyEnvironmentProjectDeploy.GetDeployFiles(
+  const AProjectName, APythonVersion: string;
+  const APlatforms: TPyEnvironmentProjectPlatforms;
+  const ACleaning: boolean;
+  const AFilesReadyCallback: TFilesReadyCallback;
+  const AExceptionCallback: TExceptionCallback;
+  const ATerminatedCallback: TTerminatedCallback);
+var
+  LModel: TDeployFilesModel;
+  LPlatform: TPyEnvironmentProjectPlatform;
+begin
+  TPythonMessage.ShowMessageView();
+  TPythonMessage.Clear();
+
+  try
+    for LPlatform in APlatforms do begin
+      LModel.ProjectName := AProjectName;
+      LModel.Platform := LPlatform;
+      LModel.PythonVersion := APythonVersion;
+      LModel.PythonEnvironmentDirectory := GetAbsolutePath();
+      LModel.Cleaning := ACleaning;
+
+      GetPlatformDeployFiles(LModel, AFilesReadyCallback, AExceptionCallback);
+    end;
+  finally
+    ATerminatedCallback();
+  end;
+end;
+
+class procedure TPyEnvironmentProjectDeploy.GetDeployFilesAsync(
+  const AProjectName, APythonVersion: string;
+  const APlatforms: TPyEnvironmentProjectPlatforms;
+  const ACleaning: boolean;
+  const AFilesReadyCallback: TFilesReadyCallback;
+  const AExceptionCallback: TExceptionCallback;
+  const ATerminatedCallback: TTerminatedCallback);
+var
+  LModel: TDeployFilesModel;
+begin
+  TPythonMessage.ShowMessageView(true);
+
+  // Must queue this call
+  TTask.Run(
+    procedure()
+    var
+      LTasks: TArray<ITask>;
+      LPlatform: TPyEnvironmentProjectPlatform;
+    begin
+      System.TMonitor.Enter(FLock);
+      try
+        TThread.Synchronize(nil, procedure() begin
+          TPythonMessage.Clear();
+        end);
+
+        BeginExecute(APythonVersion, ACleaning);
+        try
+          try
+            LTasks := nil;
+            for LPlatform in APlatforms do begin
+              LModel.ProjectName := AProjectName;
+              LModel.Platform := LPlatform;
+              LModel.PythonVersion := APythonVersion;
+              LModel.PythonEnvironmentDirectory := GetAbsolutePath();
+              LModel.Cleaning := ACleaning;
+
+              LTasks := LTasks + [
+                GetPlatformDeployFilesAsync(
+                  LModel, AFilesReadyCallback, AExceptionCallback)];
+            end;
+
+            TTask.WaitForAll(LTasks);
+          finally
+            ATerminatedCallback();
+          end;
+        finally
+          EndExecute();
+        end;
+
+        System.TMonitor.Pulse(FLock);
+      finally
+        System.TMonitor.Exit(FLock);
+      end;
+    end);
 end;
 
 end.

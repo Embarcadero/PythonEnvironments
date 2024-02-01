@@ -36,6 +36,7 @@ uses
   System.SysUtils,
   System.Classes,
   PyEnvironment.Project.IDE.Types,
+  PyEnvironment.Project.IDE.Deploy.Platform,
   PyEnvironment.Project.IDE.Deploy.Android;
 
 type
@@ -43,7 +44,8 @@ type
   protected
     function GetPlatform: TPyEnvironmentProjectPlatform; override;
     function GetPythonBundleName: string; override;
-    function Build: TArray<TPyEnvironmentDeployFile>; override;
+  protected
+    function Deploy(const AInput: TDeployTaskInput): TDeployTaskOutput; override;
   end;
 
 implementation
@@ -54,16 +56,17 @@ uses
 
 { TPyEnvironmentProjectDeployAndroidARM64 }
 
-function TPyEnvironmentProjectDeployAndroidARM64.Build: TArray<TPyEnvironmentDeployFile>;
+function TPyEnvironmentProjectDeployAndroidARM64.Deploy(
+  const AInput: TDeployTaskInput): TDeployTaskOutput;
 begin
   Result := inherited;
 
-  var LARMDeployables := TPyEnvironmentProjectDeployAndroidARM
-    .GetDeployables(ProjectFileName, PythonEnvironmentFolder, PythonVersion);
-  for var I := Low(LARMDeployables) to High(LARMDeployables) do
-    LARMDeployables[I].Condition := '''$(AndroidAppBundle)''==''true''';
+//  var LARMDeployables := TPyEnvironmentProjectDeployAndroidARM
+//    .GetDeployables(ProjectFileName, PythonEnvironmentFolder, PythonVersion);
+//  for var I := Low(LARMDeployables) to High(LARMDeployables) do
+//    LARMDeployables[I].Condition := '''$(AndroidAppBundle)''==''true''';
 
-  Result := Result + LARMDeployables;
+//  AFiles := AFiles + LARMDeployables;
 end;
 
 function TPyEnvironmentProjectDeployAndroidARM64.GetPlatform: TPyEnvironmentProjectPlatform;
@@ -73,7 +76,7 @@ end;
 
 function TPyEnvironmentProjectDeployAndroidARM64.GetPythonBundleName: string;
 begin
-  case IndexStr(PythonVersion, ['3.8', '3.9', '3.10', '3.11', '3.12']) of
+  case IndexStr(GetPythonVersion(), ['3.8', '3.9', '3.10', '3.11', '3.12']) of
     0: Result := 'python3-android-3.8.16-arm64.zip';
     1: Result := 'python3-android-3.9.16-arm64.zip';
     2: Result := 'python3-android-3.10.7-arm64.zip';
