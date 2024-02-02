@@ -58,6 +58,7 @@ type
     class procedure CleaningFiles(const APythonVersion: string);
 
     class procedure WarnControlsLocked();
+    class procedure AllDone();
   end;
 
   TCustomMessage = class(TInterfacedObject, IOTACustomMessage)
@@ -220,6 +221,14 @@ begin
     TTextMessage.Create(
     'Warning: The IDE controls will be locked until all operations have been completed.'),
     TPythonMessage.GetMessageGroup());
+end;
+
+class procedure TPythonMessage.AllDone;
+var
+  LMessageServices: IOTAMessageServices;
+begin
+  LMessageServices := (BorlandIDEServices as IOTAMessageServices);
+  LMessageServices.AddTitleMessage('All done.', TPythonMessage.GetMessageGroup());
 end;
 
 class procedure TPythonMessage.BuildingFiles(const APythonVersion: string);
@@ -399,7 +408,8 @@ var
 begin
   LParent := GetParent();
   if Assigned(LParent) then
-    LParent.Refresh(); //This will trigger "Draw"
+    LParent.Invalidate();
+    //LParent.Refresh(); //This will trigger "Draw"
 end;
 
 procedure TCustomProgressBarMessage.Print;

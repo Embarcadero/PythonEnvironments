@@ -225,6 +225,10 @@ class procedure TPyEnvironmentProjectDeploy.BeginExecute(
   const APythonVersion: string; const ACleaning: boolean);
 begin
   TThread.Synchronize(nil, procedure() begin
+    //(BorlandIDEServices as IOTAIDEWaitDialogServices).Show(
+    //  'Preparing the Python files.',
+    //  'Please, do not operate the IDE meanwhile.');
+
     Application.MainForm.Enabled := false;
 
     if ACleaning then
@@ -240,6 +244,8 @@ class procedure TPyEnvironmentProjectDeploy.EndExecute;
 begin
   TThread.Synchronize(nil, procedure() begin
     Application.MainForm.Enabled := true;
+    TPythonMessage.AllDone();
+    //(BorlandIDEServices as IOTAIDEWaitDialogServices).CloseDialog();
   end);
 end;
 

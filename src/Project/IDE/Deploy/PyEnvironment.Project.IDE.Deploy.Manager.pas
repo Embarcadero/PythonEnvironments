@@ -145,7 +145,7 @@ begin
   LMessage := GetMessage(ATask);
 
   if LMessage.Percentage < APercentage then
-    TThread.Synchronize(nil, procedure() begin
+    TThread.Queue(nil, procedure() begin
       LMessage.Percentage := APercentage;
     end);
 end;
@@ -159,7 +159,7 @@ begin
   LMessage := GetMessage(ATask);
   LMessagePtr := GetMessagePtr(ATask);
 
-  TThread.Synchronize(nil, procedure() begin
+  TThread.Queue(nil, procedure() begin
     if AOutput.Success then begin
       LMessage.PrintPercentage := false;
       LMessage.Percentage := 0;
