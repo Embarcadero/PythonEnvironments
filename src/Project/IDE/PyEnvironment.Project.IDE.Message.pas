@@ -197,7 +197,9 @@ begin
   if not Assigned(LDockPanel) then
     Exit;
 
-  LDockPanel.Height := Min(MAX_HEIGHT, (Application.MainForm.Height * 80) div 100);
+  LDockPanel.Height := Max(
+    LDockPanel.Height,
+    Min(MAX_HEIGHT, (Application.MainForm.Height * 80) div 100));
 end;
 
 class procedure TPythonMessage.ShowMessageView(
@@ -408,8 +410,7 @@ var
 begin
   LParent := GetParent();
   if Assigned(LParent) then
-    LParent.Invalidate();
-    //LParent.Refresh(); //This will trigger "Draw"
+    LParent.Invalidate(); //This will trigger "Draw"
 end;
 
 procedure TCustomProgressBarMessage.Print;
