@@ -14,8 +14,14 @@ After more than two decades of introducing [Python4Delphi (P4D)](https://github.
 
 Please check out the [samples](https://github.com/Embarcadero/PythonEnviroments/tree/main/samples) section to Get Started on **PythonEnvironments**.
 
-Currently we're providing support for Python versions - `3.7`, `3.8`, `3.9` and `3.10`. Support for `Python 3.11` is coming soon.
+Currently we're providing support for Python versions - `3.8`, `3.9`, `3.10`, `3.11` and `3.12`.
+
+
+
+https://github.com/Embarcadero/PythonEnvironments/assets/8376898/2073c4ec-04cc-4baf-a703-da91c6af1494
+
+
 
 It is powered by [(P4D)](https://github.com/Embarcadero/Python4Delphi). It powers the [P4D Data Sciences Libraries](https://github.com/Embarcadero/P4D-Data-Sciences).
 
-This is our first stable release. We encourage you to try it out, file bug reports, and add features. [Read more](https://blogs.embarcadero.com/?p=145025) and catch the recorded live stream.
+We encourage you to try it out, file bug reports, and add features. [Read more](https://blogs.embarcadero.com/?p=145025) and catch the recorded live stream.
