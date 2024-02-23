@@ -89,9 +89,8 @@ begin
   LFiles := [
     TPyEnvironmentDeployFile.Create(GetPlatform(),
       LFileName.Replace(IncludeTrailingPathDelimiter(GetEnvironmentFolder()), '', []),
-      // Extracts to ./PYVER by default
-      '.\' + GetPythonVersion(),
-      false,  true, TDeployOperation.doUnArchive, '')
+      '.\',
+      true,  true, TDeployOperation.doCopyOnly, '')
   ];
 
   Result := Assigned(LFiles);
