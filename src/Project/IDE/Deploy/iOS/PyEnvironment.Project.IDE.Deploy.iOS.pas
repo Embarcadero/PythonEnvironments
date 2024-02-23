@@ -64,14 +64,11 @@ type
     /// Delete all frameworks folders.
     /// </summary>
     procedure ClearFrameworks;
-    /// <summary>
-    /// The minimal Python bundle to be distributed to iOS.
-    /// Excludes many unnecessary files.
-    /// </summary>
-    function MakePythonMinimalBundle: string;
   protected
     function GetBundleMinimalIgnoresList: TArray<string>; override;
-    function Build: TArray<TPyEnvironmentDeployFile>; override;
+  protected
+    function Make(const AInput: TDeployTaskInput): TDeployTaskOutput; override;
+    function Deploy(const AInput: TDeployTaskInput): TDeployTaskOutput; override;
   end;
 
 implementation
@@ -124,11 +121,13 @@ begin
   var LConfigFolder := (BorlandIDEServices as IOTAServices)
     .ExpandRootMacro('$(Config)');
 
+  Result := TPath.Combine(GetProjectFolder(), GetPlatform().ToString());
+
+  Result := TPath.Combine(Result, LConfigFolder);
+
   Result := TPath.Combine(
-    GetProjectFolder(),
-    GetPlatform().ToString(),
-    LConfigFolder,
-    TPath.GetFileNameWithoutExtension(ProjectFileName)
+    Result,
+    TPath.GetFileNameWithoutExtension(GetProjectName())
     + '.'
     + 'python' + APythonVersion
     + '.'
@@ -149,7 +148,7 @@ end;
 
 function TPyEnvironmentProjectDeployIOS.GetExistingFrameworks: TArray<string>;
 begin
-  Result := TDirectory.GetFiles(GetFrameworksFolder(PythonVersion),
+  Result := TDirectory.GetFiles(GetFrameworksFolder(GetPythonVersion()),
     TSearchOption.soAllDirectories,
     function(const AFileName: string; const SearchRec: TSearchRec): boolean
     begin
@@ -173,7 +172,7 @@ begin
   // The framework folder name.
   var LFrameworkName := LBundleIdentifier + '.framework';
   // The framework folder located in the project root folder.
-  var LFrameworkFolder := TPath.Combine(GetFrameworksFolder(PythonVersion), LFrameworkName);
+  var LFrameworkFolder := TPath.Combine(GetFrameworksFolder(GetPythonVersion()), LFrameworkName);
   // The framework library name; this is the distributed .dylib file located
   // in the framework folder.
   var LLibraryName := TPath.Combine(LFrameworkFolder, ALibraryName);
@@ -210,7 +209,7 @@ end;
 
 function TPyEnvironmentProjectDeployIOS.MakeFrameworksFromZip: TArray<string>;
 begin
-  if TDirectory.Exists(GetFrameworksFolder(PythonVersion)) then
+  if TDirectory.Exists(GetFrameworksFolder(GetPythonVersion())) then
     Exit(GetExistingFrameworks());
 
   // It is the first time set or something has changed. Let's clean up.
@@ -257,7 +256,8 @@ begin
   end;
 end;
 
-function TPyEnvironmentProjectDeployIOS.MakePythonMinimalBundle: string;
+function TPyEnvironmentProjectDeployIOS.Make(
+  const AInput: TDeployTaskInput): TDeployTaskOutput;
 
   function ShouldIgnore(const AFileName: string): boolean;
   begin
@@ -270,15 +270,17 @@ function TPyEnvironmentProjectDeployIOS.MakePythonMinimalBundle: string;
 
   procedure ReadImage(const APythonBundle: string; const ACallback: TProc<TStream, TZipHeader, TFileName>);
   var
+    LZipReader: TZipFile;
     LStream: TStream;
     LLocalHeader: TZipHeader;
+    LFileName: string;
   begin
     Assert(Assigned(ACallback), 'Parameter "ACallback" not assigned.');
 
-    var LZipReader := TZipFile.Create;
+    LZipReader := TZipFile.Create;
     try
       LZipReader.Open(APythonBundle, TZipMode.zmRead);
-      for var LFileName in LZipReader.FileNames do
+      for LFileName in LZipReader.FileNames do
       begin
         if ShouldIgnore(LFileName) then
           Continue;
@@ -292,27 +294,29 @@ function TPyEnvironmentProjectDeployIOS.MakePythonMinimalBundle: string;
     end;
   end;
 
+var
+  LFileName: string;
 begin
   // Create a minimal Python bundle
-  Result := GetBundleMinimalFileName();
+  LFileName := GetBundleMinimalFileName();
 
   // Always rebuild ??? Not now...
-  if TFile.Exists(Result) then
-    Exit(Result);
+  if TFile.Exists(LFileName) then
+    Exit(true);
 
-  if not TDirectory.Exists(TPath.GetDirectoryName(Result)) then
-    TDirectory.CreateDirectory(TPath.GetDirectoryName(Result));
+  if not TDirectory.Exists(TPath.GetDirectoryName(LFileName)) then
+    TDirectory.CreateDirectory(TPath.GetDirectoryName(LFileName));
 
   var LZipWriter := TZipFile.Create();
   try
-    LZipWriter.Open(Result, TZipMode.zmWrite);
+    LZipWriter.Open(LFileName, TZipMode.zmWrite);
     // Iterate over the image bundle and create the minimal bundle
     ReadImage(LocatePythonBundle(),
       procedure(AData: TStream; AZipHeader: TZipHeader; AFileName: TFileName) begin
         // The minimal bundle does't have the /lib/pythonVER/ folder
         var LFileName := String(AFileName)
           .Replace('lib/', '', [])
-          .Replace('python' + PythonVersion + '/', '', []);
+          .Replace('python' + GetPythonVersion() + '/', '', []);
 
         if not LFileName.IsEmpty then
           LZipWriter.Add(
@@ -323,10 +327,22 @@ begin
   finally
     LZipWriter.Free;
   end;
+
+  Result := TFile.Exists(LFileName);
 end;
 
-function TPyEnvironmentProjectDeployIOS.Build: TArray<TPyEnvironmentDeployFile>;
+function TPyEnvironmentProjectDeployIOS.Deploy(
+  const AInput: TDeployTaskInput): TDeployTaskOutput;
+var
+  LFileName: string;
+  LFiles: TPyEnvironmentDeployFiles;
 begin
+  LFileName := GetBundleMinimalFileName();
+  if not TFile.Exists(LFileName) then
+    Exit(false);
+
+  LFiles := [];
+
   // Add frameworks to the deploy file list
   for var LFramework in MakeFrameworksFromZip() do
   begin
@@ -337,7 +353,7 @@ begin
     if LFramework.EndsWith('.dylib') then
       LDeployOp := TDeployOperation.doSetExecBit;
 
-    Result := Result + [
+    LFiles := LFiles + [
       TPyEnvironmentDeployFile.Create(GetPlatform(),
         // Make the framework path relative to project's path
         LFramework.Replace(IncludeTrailingPathDelimiter(GetProjectFolder), '', []),
@@ -347,14 +363,16 @@ begin
   end;
 
   // Add the python minimal bundle to the deploy file list
-  var LPythonLibZip := MakePythonMinimalBundle();
-  Result := Result + [
+  LFiles := LFiles + [
     TPyEnvironmentDeployFile.Create(GetPlatform(),
-      LPythonLibZip.Replace(IncludeTrailingPathDelimiter(PythonEnvironmentFolder), '', []),
+      LFileName.Replace(IncludeTrailingPathDelimiter(GetEnvironmentFolder()), '', []),
       // Extracts to ./PYVER by default
-      '.\' + PythonVersion,
+      '.\' + GetPythonVersion(),
       false,  true, TDeployOperation.doUnArchive, '')
   ];
+
+  Result := Assigned(LFiles);
+  Result.Args.SetFiles(LFiles);
 end;
 
 end.

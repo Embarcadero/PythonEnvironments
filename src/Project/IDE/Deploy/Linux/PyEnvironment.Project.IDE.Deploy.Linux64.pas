@@ -1,6 +1,6 @@
 (**************************************************************************)
 (*                                                                        *)
-(* Module:  Unit 'PyEnvironment.Project.IDE.Deploy.iOS'                   *)
+(* Module:  Unit 'PyEnvironment.Project.IDE.Deploy.Linux64'               *)
 (*                                                                        *)
 (*                                  Copyright (c) 2021                    *)
 (*                                  Lucas Moura Belo - lmbelo             *)
@@ -9,7 +9,7 @@
 (*                                                                        *)
 (* Project page:         https://github.com/Embarcadero/PythonEnviroments *)
 (**************************************************************************)
-(*  Functionality:  Make deployables for iOS ARM64 Simulator              *)
+(*  Functionality:  Make deployables for Android                          *)
 (*                                                                        *)
 (*                                                                        *)
 (**************************************************************************)
@@ -28,7 +28,7 @@
 (* confidential or legal reasons, everyone is free to derive a component  *)
 (* or to generate a diff file to my or other original sources.            *)
 (**************************************************************************)
-unit PyEnvironment.Project.IDE.Deploy.iOSSimARM64;
+unit PyEnvironment.Project.IDE.Deploy.Linux64;
 
 interface
 
@@ -36,10 +36,10 @@ uses
   System.SysUtils,
   PyEnvironment.Project.IDE.Types,
   PyEnvironment.Project.IDE.Deploy.Platform,
-  PyEnvironment.Project.IDE.Deploy.iOS;
+  PyEnvironment.Project.IDE.Deploy.Linux;
 
 type
-  TPyEnvironmentProjectDeployIOSSimARM64 = class(TPyEnvironmentProjectDeployIOS)
+  TPyEnvironmentProjectDeployLinux64 = class(TPyEnvironmentProjectDeployLinux)
   protected
     function GetPlatform: TPyEnvironmentProjectPlatform; override;
     function GetPythonBundleName: string; override;
@@ -50,21 +50,21 @@ implementation
 uses
   System.StrUtils;
 
-{ TPyEnvironmentProjectDeployIOSSimARM64 }
+{ TPyEnvironmentProjectDeployLinux64 }
 
-function TPyEnvironmentProjectDeployIOSSimARM64.GetPlatform: TPyEnvironmentProjectPlatform;
+function TPyEnvironmentProjectDeployLinux64.GetPlatform: TPyEnvironmentProjectPlatform;
 begin
-  Result := TPyEnvironmentProjectPlatform.iOSSimARM64;
+    Result := TPyEnvironmentProjectPlatform.Linux64;
 end;
 
-function TPyEnvironmentProjectDeployIOSSimARM64.GetPythonBundleName: string;
+function TPyEnvironmentProjectDeployLinux64.GetPythonBundleName: string;
 begin
   case IndexStr(GetPythonVersion(), ['3.8', '3.9', '3.10', '3.11', '3.12']) of
-    0: Result := 'python3-ios-3.8.18-iphonesimulator.arm64.zip';
-    1: Result := 'python3-ios-3.9.18-iphonesimulator.arm64.zip';
-    2: Result := 'python3-ios-3.10.13-iphonesimulator.arm64.zip';
-    3: Result := 'python3-ios-3.11.6-iphonesimulator.arm64.zip';
-    4: Result := 'python3-ios-3.12.0-iphonesimulator.arm64.zip';
+    0: Result := 'python3-linux-3.8.16-x86_64.zip';
+    1: Result := 'python3-linux-3.9.16-x86_64.zip';
+    2: Result := 'python3-linux-3.10.9-x86_64.zip';
+    3: Result := 'python3-linux-3.11.2-x86_64.zip';
+    4: Result := 'python3-linux-3.12.0-x86_64.zip';
     else
       Result := String.Empty;
   end;

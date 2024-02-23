@@ -1,6 +1,6 @@
 (**************************************************************************)
 (*                                                                        *)
-(* Module:  Unit 'PyEnvironment.Project.IDE.Deploy.iOS'                   *)
+(* Module:  Unit 'PyEnvironment.Project.IDE.Deploy.Factory'               *)
 (*                                                                        *)
 (*                                  Copyright (c) 2021                    *)
 (*                                  Lucas Moura Belo - lmbelo             *)
@@ -9,7 +9,7 @@
 (*                                                                        *)
 (* Project page:         https://github.com/Embarcadero/PythonEnviroments *)
 (**************************************************************************)
-(*  Functionality:  Make deployables for iOS ARM64 Simulator              *)
+(*  Functionality:  Create deployment instances of a given platform       *)
 (*                                                                        *)
 (*                                                                        *)
 (**************************************************************************)
@@ -28,46 +28,58 @@
 (* confidential or legal reasons, everyone is free to derive a component  *)
 (* or to generate a diff file to my or other original sources.            *)
 (**************************************************************************)
-unit PyEnvironment.Project.IDE.Deploy.iOSSimARM64;
+unit PyEnvironment.Project.IDE.Deploy.Factory;
 
 interface
 
 uses
-  System.SysUtils,
   PyEnvironment.Project.IDE.Types,
-  PyEnvironment.Project.IDE.Deploy.Platform,
-  PyEnvironment.Project.IDE.Deploy.iOS;
+  PyEnvironment.Project.IDE.Deploy.Intf;
 
 type
-  TPyEnvironmentProjectDeployIOSSimARM64 = class(TPyEnvironmentProjectDeployIOS)
-  protected
-    function GetPlatform: TPyEnvironmentProjectPlatform; override;
-    function GetPythonBundleName: string; override;
+  TPyEnvironmentProjectDeploySimpleFactory = class
+  public
+    class function CreateInstance(const AModel: TDeployFilesModel): IDeploymentTask; static;
   end;
 
 implementation
 
 uses
-  System.StrUtils;
+  PyEnvironment.Project.IDE.Deploy.Platform,
+  PyEnvironment.Project.IDE.Deploy.Windows32,
+  PyEnvironment.Project.IDE.Deploy.Windows64,
+  PyEnvironment.Project.IDE.Deploy.AndroidARM,
+  PyEnvironment.Project.IDE.Deploy.AndroidARM64,
+  PyEnvironment.Project.IDE.Deploy.OSX64,
+  PyEnvironment.Project.IDE.Deploy.OSXARM64,
+  PyEnvironment.Project.IDE.Deploy.iOSSimARM64,
+  PyEnvironment.Project.IDE.Deploy.iOSDevice64,
+  PyEnvironment.Project.IDE.Deploy.Linux64;
 
-{ TPyEnvironmentProjectDeployIOSSimARM64 }
+{ TPyEnvironmentProjectDeploySimpleFactory }
 
-function TPyEnvironmentProjectDeployIOSSimARM64.GetPlatform: TPyEnvironmentProjectPlatform;
+class function TPyEnvironmentProjectDeploySimpleFactory.CreateInstance(
+  const AModel: TDeployFilesModel): IDeploymentTask;
+var
+  LPlatformClass: TPyEnvironmentProjectDeployPlatformClass;
 begin
-  Result := TPyEnvironmentProjectPlatform.iOSSimARM64;
-end;
-
-function TPyEnvironmentProjectDeployIOSSimARM64.GetPythonBundleName: string;
-begin
-  case IndexStr(GetPythonVersion(), ['3.8', '3.9', '3.10', '3.11', '3.12']) of
-    0: Result := 'python3-ios-3.8.18-iphonesimulator.arm64.zip';
-    1: Result := 'python3-ios-3.9.18-iphonesimulator.arm64.zip';
-    2: Result := 'python3-ios-3.10.13-iphonesimulator.arm64.zip';
-    3: Result := 'python3-ios-3.11.6-iphonesimulator.arm64.zip';
-    4: Result := 'python3-ios-3.12.0-iphonesimulator.arm64.zip';
-    else
-      Result := String.Empty;
+  LPlatformClass := nil;
+  case AModel.Platform of
+    Win32: LPlatformClass := TPyEnvironmentProjectDeployWindows32;
+    Win64: LPlatformClass := TPyEnvironmentProjectDeployWindows64;
+    Android: LPlatformClass := TPyEnvironmentProjectDeployAndroidARM;
+    Android64: LPlatformClass := TPyEnvironmentProjectDeployAndroidARM64;
+    iOSDevice64: LPlatformClass := TPyEnvironmentProjectDeployIOSDevice64;
+    iOSSimARM64: LPlatformClass := TPyEnvironmentProjectDeployIOSSimARM64;
+    OSX64: LPlatformClass := TPyEnvironmentProjectDeployOSX64;
+    OSXARM64: LPlatformClass := TPyEnvironmentProjectDeployOSXARM64;
+    Linux64: LPlatformClass := TPyEnvironmentProjectDeployLinux64;
   end;
+
+  if not Assigned(LPlatformClass) then
+    Exit(nil);
+
+  Result := LPlatformClass.Create(AModel);
 end;
 
 end.

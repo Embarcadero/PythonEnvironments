@@ -33,6 +33,7 @@ unit PyEnvironment.Project.IDE.Types;
 interface
 
 uses
+  System.Rtti,
   System.Generics.Collections,
   DeploymentAPI;
 
@@ -40,6 +41,38 @@ type
   TPyEnvironmentProjectConfig = (Release, Debug);
   TPyEnvironmentProjectConfigs = set of TPyEnvironmentProjectConfig;
   TPyEnvironmentProjectPlatform = (Unknown, Win32, Win64, Android, Android64, iOSDevice32, iOSDevice64, iOSSimulator, iOSSimARM64, OSX64, OSXARM64, Linux64);
+  TPyEnvironmentProjectPlatforms = set of TPyEnvironmentProjectPlatform;
+
+  TDeployTask = (
+    Download, // Download the Python bundle.
+    Make, // Prepare files based in the Python bundle.
+    Deploy, // List prepared files for deployment.
+    Clean // List prepared files to clean the deployment list.
+  );
+
+  TDeployTaskOutputArgs = TArray<TPair<string, TValue>>;
+  TDeployTaskOutput = record
+  public
+    Success: boolean;
+    Description: string;
+    Text: string;
+    Args: TDeployTaskOutputArgs;
+  public
+    constructor Create(ASuccess: boolean); overload;
+    constructor Create(ASuccess: boolean; ADescription, AText: string); overload;
+
+    class operator Implicit(ASuccess: boolean): TDeployTaskOutput;
+  end;
+
+  TDeployTaskStartCallback = reference to procedure(ADeployTask: TDeployTask;
+    AMessage: string);
+  TDeployTaskProgressCallback = reference to procedure(ADeployTask: TDeployTask;
+    APercentage: integer);
+  TDeployTaskFinishCallback = reference to procedure(ADeployTask: TDeployTask;
+    [ref] AOutput: TDeployTaskOutput);
+
+  TDeployTaskInput = record
+  end;
 
   TPyEvironmentProjectConfigHelper = record helper for TPyEnvironmentProjectConfig
     function ToString: string;
@@ -76,10 +109,28 @@ type
       const AUpdateLocalFileName: boolean = true); overload;
   end;
 
+  TPyEnvironmentDeployFiles = TArray<TPyEnvironmentDeployFile>;
+
+  TDeployTaskOutputArgsHelper = record helper for TDeployTaskOutputArgs
+  public
+    procedure SetFiles(AFiles: TPyEnvironmentDeployFiles);
+    function GetFiles(): TPyEnvironmentDeployFiles;
+  end;
+
+  TDeployFilesModel = record
+  public
+    ProjectName: string;
+    Platform: TPyEnvironmentProjectPlatform;
+    PythonVersion: string;
+    PythonEnvironmentDirectory: string;
+    Cleaning: boolean;
+  end;
+
 implementation
 
 uses
-  TypInfo;
+  System.SysUtils,
+  System.TypInfo;
 
 { TPyEnvironmentDeployFile }
 
@@ -141,6 +192,48 @@ end;
 function TPyEvironmentProjectPlatformHelper.ToString: string;
 begin
   Result := GetEnumName(TypeInfo(TPyEnvironmentProjectPlatform), Ord(Self));
+end;
+
+{ TDeployTaskOutput }
+
+constructor TDeployTaskOutput.Create(ASuccess: boolean; ADescription,
+  AText: string);
+begin
+  Success := ASuccess;
+  Description := ADescription;
+  Text := AText;
+end;
+
+constructor TDeployTaskOutput.Create(ASuccess: boolean);
+begin
+  Create(ASuccess, String.Empty, String.Empty);
+end;
+
+class operator TDeployTaskOutput.Implicit(ASuccess: boolean): TDeployTaskOutput;
+begin
+  Result := TDeployTaskOutput.Create(ASuccess);
+end;
+
+{ TDeployTaskOutputArgsHelper }
+
+function TDeployTaskOutputArgsHelper.GetFiles: TPyEnvironmentDeployFiles;
+var
+  LArg: TPair<string, TValue>;
+begin
+  for LArg in Self do
+    if LArg.Key = 'Files' then
+      Exit(LArg.Value.AsType<TPyEnvironmentDeployFiles>);
+
+  Result := nil;
+end;
+
+procedure TDeployTaskOutputArgsHelper.SetFiles(
+  AFiles: TPyEnvironmentDeployFiles);
+begin
+  Self := Self + [
+    TPair<string, TValue>.Create(
+      'Files',
+      TValue.From<TPyEnvironmentDeployFiles>(AFiles))];
 end;
 
 end.

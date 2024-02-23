@@ -36,6 +36,7 @@ uses
   System.SysUtils,
   System.Classes,
   PyEnvironment.Project.IDE.Types,
+  PyEnvironment.Project.IDE.Deploy.Platform,
   PyEnvironment.Project.IDE.Deploy.Android;
 
 type
@@ -59,7 +60,7 @@ end;
 
 function TPyEnvironmentProjectDeployAndroidARM.GetPythonBundleName: string;
 begin
-  case IndexStr(PythonVersion, ['3.8', '3.9', '3.10', '3.11', '3.12']) of
+  case IndexStr(GetPythonVersion(), ['3.8', '3.9', '3.10', '3.11', '3.12']) of
     0: Result := 'python3-android-3.8.16-arm.zip';
     1: Result := 'python3-android-3.9.16-arm.zip';
     2: Result := 'python3-android-3.10.7-arm.zip';

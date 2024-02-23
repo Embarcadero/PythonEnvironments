@@ -40,14 +40,9 @@ contains
   PyEnvironment.Distribution in '..\src\PyEnvironment.Distribution.pas',
   PyEnvironment.Local in '..\src\PyEnvironment.Local.pas',
   PyEnvironment.Embeddable in '..\src\Embeddable\PyEnvironment.Embeddable.pas',
-  PyEnvironment.Embeddable.Res in '..\src\Embeddable\Res\PyEnvironment.Embeddable.Res.pas',
-  PyEnvironment.Embeddable.Res.Python38 in '..\src\Embeddable\Res\PyEnvironment.Embeddable.Res.Python38.pas',
-  PyEnvironment.Embeddable.Res.Python39 in '..\src\Embeddable\Res\PyEnvironment.Embeddable.Res.Python39.pas',
-  PyEnvironment.Embeddable.Res.Python310 in '..\src\Embeddable\Res\PyEnvironment.Embeddable.Res.Python310.pas',
   PyEnvironment.AddOn.EnsurePip in '..\src\AddOn\PyEnvironment.AddOn.EnsurePip.pas',
   PyEnvironment.AddOn.GetPip in '..\src\AddOn\PyEnvironment.AddOn.GetPip.pas',
   PyEnvironment.AddOn in '..\src\AddOn\PyEnvironment.AddOn.pas',
-  PyEnvironment.Exception in '..\src\PyEnvironment.Exception.pas',
-  PyEnvironment.Embeddable.Res.Python311 in '..\src\Embeddable\Res\PyEnvironment.Embeddable.Res.Python311.pas';
+  PyEnvironment.Exception in '..\src\PyEnvironment.Exception.pas';
 
 end.

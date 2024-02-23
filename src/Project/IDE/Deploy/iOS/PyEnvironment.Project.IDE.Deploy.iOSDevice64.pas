@@ -35,6 +35,7 @@ interface
 uses
   System.SysUtils,
   PyEnvironment.Project.IDE.Types,
+  PyEnvironment.Project.IDE.Deploy.Platform,
   PyEnvironment.Project.IDE.Deploy.iOS;
 
 type
@@ -58,7 +59,7 @@ end;
 
 function TPyEnvironmentProjectDeployIOSDevice64.GetPythonBundleName: string;
 begin
-  case IndexStr(PythonVersion, ['3.8', '3.9', '3.10', '3.11', '3.12']) of
+  case IndexStr(GetPythonVersion(), ['3.8', '3.9', '3.10', '3.11', '3.12']) of
     0: Result := 'python3-ios-3.8.18-iphoneos.arm64.zip';
     1: Result := 'python3-ios-3.9.18-iphoneos.arm64.zip';
     2: Result := 'python3-ios-3.10.13-iphoneos.arm64.zip';

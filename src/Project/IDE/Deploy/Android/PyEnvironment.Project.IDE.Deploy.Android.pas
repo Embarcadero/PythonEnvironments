@@ -55,14 +55,11 @@ type
     /// Delete all assets.
     /// </summary>
     procedure ClearAssets;
-    /// <summary>
-    /// The minimal Python bundle to be distributed to Android.
-    /// Excludes many unnecessary files.
-    /// </summary>
-    function MakePythonMinimalBundle: string;
   protected
     function GetBundleMinimalIgnoresList: TArray<string>; override;
-    function Build: TArray<TPyEnvironmentDeployFile>; override;
+  protected
+    function Make(const AInput: TDeployTaskInput): TDeployTaskOutput; override;
+    function Deploy(const AInput: TDeployTaskInput): TDeployTaskOutput; override;
   end;
 
 
@@ -83,11 +80,13 @@ begin
   var LConfigFolder := (BorlandIDEServices as IOTAServices)
     .ExpandRootMacro('$(Config)');
 
+  Result := TPath.Combine(GetProjectFolder(), GetPlatform().ToString());
+
+  Result := TPath.Combine(Result, LConfigFolder);
+
   Result := TPath.Combine(
-    GetProjectFolder(),
-    GetPlatform().ToString(),
-    LConfigFolder,
-    TPath.GetFileNameWithoutExtension(ProjectFileName)
+    Result,
+    TPath.GetFileNameWithoutExtension(GetProjectName())
     + '.'
     + 'python' + APythonVersion
     + '.'
@@ -105,7 +104,7 @@ end;
 
 function TPyEnvironmentProjectDeployAndroid.GetExistingAssets: TArray<string>;
 begin
-  Result := TDirectory.GetFiles(GetAssetsFolder(PythonVersion),
+  Result := TDirectory.GetFiles(GetAssetsFolder(GetPythonVersion()),
     TSearchOption.soAllDirectories,
     function(const AFileName: string; const SearchRec: TSearchRec): boolean
     begin
@@ -127,31 +126,31 @@ var
   LStream: TStream;
   LLocalHeader: TZipHeader;
 begin
-  if TDirectory.Exists(GetAssetsFolder(PythonVersion)) then
+  if TDirectory.Exists(GetAssetsFolder(GetPythonVersion())) then
     Exit(GetExistingAssets());
 
   // It is the first time set or something has changed. Let's clean up.
   ClearAssets();
 
   // Make the assets folder
-  TDirectory.CreateDirectory(GetAssetsFolder(PythonVersion));
+  TDirectory.CreateDirectory(GetAssetsFolder(GetPythonVersion()));
 
   var LZip := TZipFile.Create;
   try
     LZip.Open(LocatePythonBundle(), TZipMode.zmRead);
 
     // Is the libpythonxx.so.1.0 the real one?
-    if LZip.IndexOf(Format('lib/libpython%s.so.1.0', [PythonVersion])) >= 0 then begin
+    if LZip.IndexOf(Format('lib/libpython%s.so.1.0', [GetPythonVersion()])) >= 0 then begin
       var LAssetFileName := TPath.Combine(
-        GetAssetsFolder(PythonVersion),
-        Format('libpython%s.so', [PythonVersion]));
+        GetAssetsFolder(GetPythonVersion()),
+        Format('libpython%s.so', [GetPythonVersion()]));
 
       if TFile.Exists(LAssetFileName) then
         TFile.Delete(LAssetFileName);
 
       var LAssetStream := TFileStream.Create(LAssetFileName, fmCreate);
       try
-        LZip.Read(Format('lib/libpython%s.so.1.0', [PythonVersion]), LStream, LLocalHeader);
+        LZip.Read(Format('lib/libpython%s.so.1.0', [GetPythonVersion()]), LStream, LLocalHeader);
         LAssetStream.CopyFrom(LStream, LStream.Size);
       finally
         LAssetStream.Free;
@@ -162,11 +161,11 @@ begin
 
     // We need to name the python launcher with the "lib" prefix
     var LAssetFileName := TPath.Combine(
-      GetAssetsFolder(PythonVersion),
-      Format('libpythonlauncher%s.so', [PythonVersion]));
+      GetAssetsFolder(GetPythonVersion()),
+      Format('libpythonlauncher%s.so', [GetPythonVersion()]));
     var LAssetStream := TFileStream.Create(LAssetFileName, fmCreate);
     try
-      LZip.Read('bin/python' + PythonVersion, LStream, LLocalHeader);
+      LZip.Read('bin/python' + GetPythonVersion(), LStream, LLocalHeader);
       LAssetStream.CopyFrom(LStream, LStream.Size);
     finally
       LAssetStream.Free;
@@ -180,7 +179,8 @@ begin
   end;
 end;
 
-function TPyEnvironmentProjectDeployAndroid.MakePythonMinimalBundle: string;
+function TPyEnvironmentProjectDeployAndroid.Make(
+  const AInput: TDeployTaskInput): TDeployTaskOutput;
 
   function ShouldIgnore(const AFileName: string): boolean;
   begin
@@ -193,15 +193,17 @@ function TPyEnvironmentProjectDeployAndroid.MakePythonMinimalBundle: string;
 
   procedure ReadImage(const APythonBundle: string; const ACallback: TProc<TStream, TZipHeader, TFileName>);
   var
+    LZipReader: TZipFile;
     LStream: TStream;
     LLocalHeader: TZipHeader;
+    LFileName: string;
   begin
     Assert(Assigned(ACallback), 'Parameter "ACallback" not assigned.');
 
-    var LZipReader := TZipFile.Create;
+    LZipReader := TZipFile.Create;
     try
       LZipReader.Open(APythonBundle, TZipMode.zmRead);
-      for var LFileName in LZipReader.FileNames do
+      for LFileName in LZipReader.FileNames do
       begin
         if ShouldIgnore(LFileName) then
           Continue;
@@ -214,21 +216,22 @@ function TPyEnvironmentProjectDeployAndroid.MakePythonMinimalBundle: string;
       LZipReader.Free;
     end;
   end;
-
+var
+  LFileName: string;
 begin
   // Create a minimal Python bundle
-  Result := GetBundleMinimalFileName();
+  LFileName := GetBundleMinimalFileName();
 
   // Always rebuild ??? Not now...
-  if TFile.Exists(Result) then
-    Exit(Result);
+  if TFile.Exists(LFileName) then
+    Exit(true);
 
-  if not TDirectory.Exists(TPath.GetDirectoryName(Result)) then
-    TDirectory.CreateDirectory(TPath.GetDirectoryName(Result));
+  if not TDirectory.Exists(TPath.GetDirectoryName(LFileName)) then
+    TDirectory.CreateDirectory(TPath.GetDirectoryName(LFileName));
 
   var LZipWriter := TZipFile.Create();
   try
-    LZipWriter.Open(Result, TZipMode.zmWrite);
+    LZipWriter.Open(LFileName, TZipMode.zmWrite);
     // Iterate over the image bundle and create the minimal bundle
     ReadImage(LocatePythonBundle(),
       procedure(AData: TStream; AZipHeader: TZipHeader; AFileName: TFileName) begin
@@ -241,10 +244,22 @@ begin
   finally
     LZipWriter.Free;
   end;
+
+  Result := TFile.Exists(LFileName);
 end;
 
-function TPyEnvironmentProjectDeployAndroid.Build: TArray<TPyEnvironmentDeployFile>;
+function TPyEnvironmentProjectDeployAndroid.Deploy(
+  const AInput: TDeployTaskInput): TDeployTaskOutput;
+var
+  LFileName: string;
+  LFiles: TPyEnvironmentDeployFiles;
 begin
+  LFileName := GetBundleMinimalFileName();
+  if not TFile.Exists(LFileName) then
+    Exit(false);
+
+  LFiles := [];
+
   // Add assets to the deploy file list
   for var LAsset: string in MakeAssetsFromZip() do
   begin
@@ -256,7 +271,7 @@ begin
     if GetPlatform() = TPyEnvironmentProjectPlatform.Android64 then
       LDestFolder := 'library\lib\arm64-v8a\';
 
-    Result := Result + [
+    LFiles := LFiles + [
       TPyEnvironmentDeployFile.Create(GetPlatform(),
         // Make the asset path relative to project's path
         LAsset.Replace(IncludeTrailingPathDelimiter(GetProjectFolder()), '', []),
@@ -266,16 +281,18 @@ begin
   end;
 
   // Add the python minimal bundle to the deploy file list
-  var LPythonLibZip := MakePythonMinimalBundle();
-  Result := Result + [
+  LFiles := LFiles + [
     TPyEnvironmentDeployFile.Create(GetPlatform(),
-      LPythonLibZip.Replace(IncludeTrailingPathDelimiter(PythonEnvironmentFolder), '', []),
+      LFileName.Replace(IncludeTrailingPathDelimiter(GetEnvironmentFolder()), '', []),
       // Extracts to ./PYVER by default
       '.\assets\internal',
       false, true,
       TDeployOperation.doCopyOnly, //It seems Android doesn't support doUnArchive :(
       '')
   ];
+
+  Result := Assigned(LFiles);
+  Result.Args.SetFiles(LFiles);
 end;
 
 end.

@@ -117,6 +117,7 @@ type
     procedure SetDeployFiles(const AProject: IOTAProject;
       const AConfig: TPyEnvironmentProjectConfig;
       const APlatform: TPyEnvironmentProjectPlatform;
+      const AFiles: TArray<TPyEnvironmentDeployFile>;
       const AEnabled: Boolean);
     procedure SetPythonVersion(const AProject: IOTAProject;
       const AEnabled: Boolean);
@@ -135,6 +136,8 @@ implementation
 
 uses
   System.IOUtils,
+  System.Threading,
+  System.Generics.Collections,
   PyEnvironment.Project.IDE.Helper;
 
 function GetActiveFormEditor: IOTAFormEditor;
@@ -377,8 +380,11 @@ begin
 end;
 
 procedure TPyEnvironmentProjectManagerMenuPythonEnvironmentVersionSubItem.SetDeployFiles(
-  const AProject: IOTAProject; const AConfig: TPyEnvironmentProjectConfig;
-  const APlatform: TPyEnvironmentProjectPlatform; const AEnabled: Boolean);
+  const AProject: IOTAProject;
+  const AConfig: TPyEnvironmentProjectConfig;
+  const APlatform: TPyEnvironmentProjectPlatform;
+  const AFiles: TArray<TPyEnvironmentDeployFile>;
+  const AEnabled: Boolean);
 var
   LDeployFile: TPyEnvironmentDeployFile;
   LPythonVersion: string;
@@ -387,10 +393,10 @@ begin
   begin
     LPythonVersion := TPyEnvironmentProjectHelper.CurrentPythonVersion[AProject];
     if AEnabled and (APlatform in TPyEnvironmentProjectDeploy.SUPPORTED_PLATFORMS) then begin
-      for LDeployFile in TPyEnvironmentProjectDeploy.GetDeployFiles(AProject.FileName, LPythonVersion, APlatform) do
+      for LDeployFile in AFiles do
         TPyEnvironmentProjectHelper.AddDeployFile(AProject, AConfig, LDeployFile);
     end else begin
-      for LDeployFile in TPyEnvironmentProjectDeploy.GetDeployFiles(AProject.FileName, LPythonVersion, APlatform) do begin
+      for LDeployFile in AFiles do begin
         TPyEnvironmentProjectHelper.RemoveDeployFile(
           AProject, AConfig, APlatform, LDeployFile.LocalFileName, LDeployFile.RemotePath);
         if LDeployFile.CopyToOutput then
@@ -443,22 +449,58 @@ procedure TPyEnvironmentProjectManagerMenuPythonEnvironmentVersionSubItem.SetPyt
   end;
 
 var
+  LPythonVersion: string;
   LPlatform: TPyEnvironmentProjectPlatform;
-  LConfig: TPyEnvironmentProjectConfig;
-  LProjectOptions: IOTAProjectOptions;
+  LPlatforms: TPyEnvironmentProjectPlatforms;
 begin
+  LPythonVersion := TPyEnvironmentProjectHelper.CurrentPythonVersion[AProject];
+
+  LPlatforms := [];
   for LPlatform := Low(TPyEnvironmentProjectPlatform) to High(TPyEnvironmentProjectPlatform) do
     if SupportsPlatform(LPlatform) then
-      for LConfig := Low(TPyEnvironmentProjectConfig) to High(TPyEnvironmentProjectConfig) do
-        SetDeployFiles(AProject, LConfig, LPlatform, AEnabled);
+      LPlatforms := LPlatforms + [LPlatform];
 
-  // Remove remaing files from old versions
-  if not AEnabled then
-    TPyEnvironmentProjectHelper.RemoveDeployFilesOfClass(AProject);
+  TPyEnvironmentProjectDeploy.GetDeployFilesAsync(
+    AProject.FileName,
+    LPythonVersion,
+    LPlatforms,
+    not AEnabled,
+    // OnFilesReady
+    procedure(APlatform: TPyEnvironmentProjectPlatform;
+      AFiles: TArray<TPyEnvironmentDeployFile>)
+    begin
+      TThread.Queue(nil,
+        procedure()
+        var
+          LConfig: TPyEnvironmentProjectConfig;
+        begin
+          for LConfig := Low(TPyEnvironmentProjectConfig) to High(TPyEnvironmentProjectConfig) do
+            SetDeployFiles(AProject, LConfig, APlatform, AFiles, AEnabled);
+        end);
+    end,
+    // OnException
+    procedure(APlatform: TPyEnvironmentProjectPlatform; AException: Exception)
+    begin
+      TThread.Synchronize(nil, procedure() begin
+        ShowException(AException, AException.StackInfo);
+      end);
+    end,
+    // OnTerminate
+    procedure()
+    var
+      LProjectOptions: IOTAProjectOptions;
+    begin
+      TThread.Queue(nil,
+        procedure() begin
+          LProjectOptions := AProject.ProjectOptions;
+          // Remove remaing files from old versions
+          if not AEnabled then
+            TPyEnvironmentProjectHelper.RemoveDeployFilesOfClass(AProject);
 
-  LProjectOptions := AProject.ProjectOptions;
-  if Assigned(LProjectOptions) then
-    LProjectOptions.ModifiedState := True;
+          if Assigned(LProjectOptions) then
+            LProjectOptions.ModifiedState := True;
+        end);
+    end);
 end;
 
 end.

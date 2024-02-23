@@ -1,3 +1,2 @@
 # Disable any line endings auto conversion.
 * -text
-*.zip filter=lfs diff=lfs merge=lfs -text
