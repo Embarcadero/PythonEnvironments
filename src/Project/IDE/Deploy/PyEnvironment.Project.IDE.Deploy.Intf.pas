@@ -1,6 +1,6 @@
 (**************************************************************************)
 (*                                                                        *)
-(* Module:  Unit 'PyEnvironment.Project.IDE.Deploy.iOS'                   *)
+(* Module:  Unit 'PyEnvironment.Project.IDE.Deploy.Intf'                  *)
 (*                                                                        *)
 (*                                  Copyright (c) 2021                    *)
 (*                                  Lucas Moura Belo - lmbelo             *)
@@ -9,7 +9,7 @@
 (*                                                                        *)
 (* Project page:         https://github.com/Embarcadero/PythonEnviroments *)
 (**************************************************************************)
-(*  Functionality:  Make deployables for iOS ARM64 Simulator              *)
+(*  Functionality:  Define interfaces for Deployment classes              *)
 (*                                                                        *)
 (*                                                                        *)
 (**************************************************************************)
@@ -28,46 +28,41 @@
 (* confidential or legal reasons, everyone is free to derive a component  *)
 (* or to generate a diff file to my or other original sources.            *)
 (**************************************************************************)
-unit PyEnvironment.Project.IDE.Deploy.iOSSimARM64;
+unit PyEnvironment.Project.IDE.Deploy.Intf;
 
 interface
 
 uses
-  System.SysUtils,
-  PyEnvironment.Project.IDE.Types,
-  PyEnvironment.Project.IDE.Deploy.Platform,
-  PyEnvironment.Project.IDE.Deploy.iOS;
+  PyEnvironment.Project.IDE.Types;
 
 type
-  TPyEnvironmentProjectDeployIOSSimARM64 = class(TPyEnvironmentProjectDeployIOS)
-  protected
-    function GetPlatform: TPyEnvironmentProjectPlatform; override;
-    function GetPythonBundleName: string; override;
+  IDeploymentTask = interface
+    ['{79448D47-A73E-42F5-B15E-7AE24C800152}']
+    function GetStartTaskCallback: TDeployTaskStartCallback;
+    procedure SetStartTaskCallback(Value: TDeployTaskStartCallback);
+    function GetFinishTaskCallback: TDeployTaskFinishCallback;
+    procedure SetFinishTaskCallback(Value: TDeployTaskFinishCallback);
+    function GetProgressCallback: TDeployTaskProgressCallback;
+    procedure SetProgressCallback(Value: TDeployTaskProgressCallback);
+
+    function ShouldDownload(): boolean;
+    function ShouldMake(): boolean;
+
+    function Download(const AInput: TDeployTaskInput): TDeployTaskOutput;
+    function Make(const AInput: TDeployTaskInput): TDeployTaskOutput;
+    function Deploy(const AInput: TDeployTaskInput): TDeployTaskOutput;
+    function Clean(const AInput: TDeployTaskInput): TDeployTaskOutput;
+
+    /// <summary>
+    /// Execute all operations.
+    /// </summary>
+    function Execute(out AFiles: TPyEnvironmentDeployFiles): boolean;
+
+    property OnStartTask: TDeployTaskStartCallback read GetStartTaskCallback write SetStartTaskCallback;
+    property OnFinishTask: TDeployTaskFinishCallback read GetFinishTaskCallback write SetFinishTaskCallback;
+    property OnProgress: TDeployTaskProgressCallback read GetProgressCallback write SetProgressCallback;
   end;
 
 implementation
-
-uses
-  System.StrUtils;
-
-{ TPyEnvironmentProjectDeployIOSSimARM64 }
-
-function TPyEnvironmentProjectDeployIOSSimARM64.GetPlatform: TPyEnvironmentProjectPlatform;
-begin
-  Result := TPyEnvironmentProjectPlatform.iOSSimARM64;
-end;
-
-function TPyEnvironmentProjectDeployIOSSimARM64.GetPythonBundleName: string;
-begin
-  case IndexStr(GetPythonVersion(), ['3.8', '3.9', '3.10', '3.11', '3.12']) of
-    0: Result := 'python3-ios-3.8.18-iphonesimulator.arm64.zip';
-    1: Result := 'python3-ios-3.9.18-iphonesimulator.arm64.zip';
-    2: Result := 'python3-ios-3.10.13-iphonesimulator.arm64.zip';
-    3: Result := 'python3-ios-3.11.6-iphonesimulator.arm64.zip';
-    4: Result := 'python3-ios-3.12.0-iphonesimulator.arm64.zip';
-    else
-      Result := String.Empty;
-  end;
-end;
 
 end.

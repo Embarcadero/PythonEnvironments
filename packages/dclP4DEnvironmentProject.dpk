@@ -50,7 +50,17 @@ contains
   PyEnvironment.Project.IDE.Deploy.OSXARM64 in '..\src\Project\IDE\Deploy\OSX\PyEnvironment.Project.IDE.Deploy.OSXARM64.pas',
   PyEnvironment.Project.IDE.Deploy.Android in '..\src\Project\IDE\Deploy\Android\PyEnvironment.Project.IDE.Deploy.Android.pas',
   PyEnvironment.Project.IDE.Deploy.AndroidARM in '..\src\Project\IDE\Deploy\Android\PyEnvironment.Project.IDE.Deploy.AndroidARM.pas',
-  PyEnvironment.Project.IDE.Deploy.AndroidARM64 in '..\src\Project\IDE\Deploy\Android\PyEnvironment.Project.IDE.Deploy.AndroidARM64.pas';
+  PyEnvironment.Project.IDE.Deploy.AndroidARM64 in '..\src\Project\IDE\Deploy\Android\PyEnvironment.Project.IDE.Deploy.AndroidARM64.pas',
+  PyEnvironment.Project.IDE.Deploy.Windows in '..\src\Project\IDE\Deploy\Windows\PyEnvironment.Project.IDE.Deploy.Windows.pas',
+  PyEnvironment.Project.IDE.Deploy.Windows32 in '..\src\Project\IDE\Deploy\Windows\PyEnvironment.Project.IDE.Deploy.Windows32.pas',
+  PyEnvironment.Project.IDE.Deploy.Windows64 in '..\src\Project\IDE\Deploy\Windows\PyEnvironment.Project.IDE.Deploy.Windows64.pas',
+  PyEnvironment.Project.IDE.Deploy.Linux in '..\src\Project\IDE\Deploy\Linux\PyEnvironment.Project.IDE.Deploy.Linux.pas',
+  PyEnvironment.Project.IDE.Deploy.Linux64 in '..\src\Project\IDE\Deploy\Linux\PyEnvironment.Project.IDE.Deploy.Linux64.pas',
+  PyEnvironment.Project.IDE.DownloadBundle in '..\src\Project\IDE\Download\PyEnvironment.Project.IDE.DownloadBundle.pas',
+  PyEnvironment.Project.IDE.Message in '..\src\Project\IDE\PyEnvironment.Project.IDE.Message.pas',
+  PyEnvironment.Project.IDE.Deploy.Manager in '..\src\Project\IDE\Deploy\PyEnvironment.Project.IDE.Deploy.Manager.pas',
+  PyEnvironment.Project.IDE.Deploy.Intf in '..\src\Project\IDE\Deploy\PyEnvironment.Project.IDE.Deploy.Intf.pas',
+  PyEnvironment.Project.IDE.Deploy.Factory in '..\src\Project\IDE\Deploy\PyEnvironment.Project.IDE.Deploy.Factory.pas';
 
 end.
 

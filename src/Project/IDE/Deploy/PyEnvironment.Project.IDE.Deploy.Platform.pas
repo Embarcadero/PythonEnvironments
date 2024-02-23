@@ -37,79 +37,143 @@ uses
   System.Classes,
   ToolsAPI,
   DeploymentAPI,
-  PyEnvironment.Project.IDE.Types;
+  PyEnvironment.Project.IDE.Types,
+  PyEnvironment.Project.IDE.Deploy.Intf;
 
 type
   TPyEnvironmentProjectDeployPlatformClass = class of TPyEnvironmentProjectDeployPlatform;
 
-  TPyEnvironmentProjectDeployPlatform = class
+  TPyEnvironmentProjectDeployPlatform = class(TInterfacedObject, IDeploymentTask)
   private
-    FProjectFileName: string;
-    FPythonEnvironmentFolder: string;
-    FPythonVersion: string;
+    FModel: TDeployFilesModel;
+    FStartTaskCallback: TDeployTaskStartCallback;
+    FFinishTaskCallback: TDeployTaskFinishCallback;
+    FProgressCallback: TDeployTaskProgressCallback;
+  private
+    function MakeStartTaskMessage(const ADeployTask: TDeployTask): string;
   protected
+    function GetPythonVersion: string; inline;
     function GetProjectFolder: string; inline;
     function GetProjectName: string; inline;
+    function GetEnvironmentFolder: string; inline;
     function GetBundleImageFolder: string; inline;
     function GetBundleMinimalFileName: string; inline;
 
     function GetPlatform: TPyEnvironmentProjectPlatform; virtual; abstract;
     function GetPythonBundleName: string; virtual; abstract;
     function GetBundleMinimalIgnoresList: TArray<string>; virtual;
-
-    function Build: TArray<TPyEnvironmentDeployFile>; virtual; abstract;
   protected
     /// <summary>
     /// Locate the Python bundle by version.
     /// </summary>
     function LocatePythonBundle: string;
+  private
+    // IDeployOperation implementation
+    function GetStartTaskCallback: TDeployTaskStartCallback;
+    procedure SetStartTaskCallback(Value: TDeployTaskStartCallback);
+    function GetFinishTaskCallback: TDeployTaskFinishCallback;
+    procedure SetFinishTaskCallback(Value: TDeployTaskFinishCallback);
+    function GetProgressCallback: TDeployTaskProgressCallback;
+    procedure SetProgressCallback(Value: TDeployTaskProgressCallback);
+  protected
+    // IDeployOperation implementation
+    function ShouldDownload(): boolean;
+    function ShouldMake(): boolean;
+
+    function Download(const AInput: TDeployTaskInput): TDeployTaskOutput; virtual;
+    function Make(const AInput: TDeployTaskInput): TDeployTaskOutput; virtual; abstract;
+    function Deploy(const AInput: TDeployTaskInput): TDeployTaskOutput; virtual; abstract;
+    function Clean(const AInput: TDeployTaskInput): TDeployTaskOutput; virtual;
+
+    function Execute(out AFiles: TPyEnvironmentDeployFiles): boolean;
   public
-    constructor Create(const AProjectFileName, APythonEnvironmentFolder,
-      APythonVersion: string);
+    constructor Create(const AModel: TDeployFilesModel);
 
-    class function GetDeployables(const AProjectFileName, APythonEnvironmentDir,
-      APythonVersion: string): TArray<TPyEnvironmentDeployFile>;
-
-    property PythonVersion: string read FPythonVersion;
-    property ProjectFileName: string read FProjectFileName;
-    property PythonEnvironmentFolder: string read FPythonEnvironmentFolder;
+    property Model: TDeployFilesModel read FModel;
+    property OnStartTask: TDeployTaskStartCallback read GetStartTaskCallback write SetStartTaskCallback;
+    property OnFinishTask: TDeployTaskFinishCallback read GetFinishTaskCallback write SetFinishTaskCallback;
+    property OnProgress: TDeployTaskProgressCallback read GetProgressCallback write SetProgressCallback;
   end;
-
 
 implementation
 
 uses
-  System.IOUtils;
+  System.Zip,
+  System.IOUtils,
+  System.Threading,
+  PyEnvironment.Project.IDE.DownloadBundle;
 
 { TPyEnvironmentProjectDeployPlatform }
 
-constructor TPyEnvironmentProjectDeployPlatform.Create(const AProjectFileName,
-  APythonEnvironmentFolder, APythonVersion: string);
+constructor TPyEnvironmentProjectDeployPlatform.Create(
+  const AModel: TDeployFilesModel);
 begin
   inherited Create();
-  FProjectFileName := AProjectFileName;
-  FPythonEnvironmentFolder := APythonEnvironmentFolder;
-  FPythonVersion := APythonVersion;
+  FModel := AModel;
+end;
+
+function TPyEnvironmentProjectDeployPlatform.GetProgressCallback: TDeployTaskProgressCallback;
+begin
+  Result := FProgressCallback;
+end;
+
+procedure TPyEnvironmentProjectDeployPlatform.SetProgressCallback(
+  Value: TDeployTaskProgressCallback);
+begin
+  FProgressCallback := Value;
+end;
+
+function TPyEnvironmentProjectDeployPlatform.GetStartTaskCallback: TDeployTaskStartCallback;
+begin
+  Result := FStartTaskCallback;
+end;
+
+procedure TPyEnvironmentProjectDeployPlatform.SetStartTaskCallback(
+  Value: TDeployTaskStartCallback);
+begin
+  FStartTaskCallback := Value;
+end;
+
+function TPyEnvironmentProjectDeployPlatform.GetFinishTaskCallback: TDeployTaskFinishCallback;
+begin
+  Result := FFinishTaskCallback;
+end;
+
+procedure TPyEnvironmentProjectDeployPlatform.SetFinishTaskCallback(
+  Value: TDeployTaskFinishCallback);
+begin
+  FFinishTaskCallback := Value;
 end;
 
 function TPyEnvironmentProjectDeployPlatform.GetProjectFolder: string;
 begin
-  Result := TPath.GetDirectoryName(FProjectFileName);
+  Result := TPath.GetDirectoryName(FModel.ProjectName);
 end;
 
 function TPyEnvironmentProjectDeployPlatform.GetProjectName: string;
 begin
-  Result := TPath.GetFileName(FProjectFileName);
+  Result := TPath.GetFileName(FModel.ProjectName);
+end;
+
+function TPyEnvironmentProjectDeployPlatform.GetPythonVersion: string;
+begin
+  Result := Model.PythonVersion;
+end;
+
+function TPyEnvironmentProjectDeployPlatform.GetEnvironmentFolder: string;
+begin
+  Result := FModel.PythonEnvironmentDirectory;
 end;
 
 function TPyEnvironmentProjectDeployPlatform.GetBundleImageFolder: string;
 begin
-  Result := TPath.Combine(PythonEnvironmentFolder, 'python');
+  Result := TPath.Combine(GetEnvironmentFolder(), 'python');
 end;
 
 function TPyEnvironmentProjectDeployPlatform.GetBundleMinimalFileName: string;
 begin
-  Result := TPath.Combine(PythonEnvironmentFolder, 'python',
+  Result := TPath.Combine(
+    TPath.Combine(GetEnvironmentFolder(), 'python'),
     'min-' + TPath.GetFileName(LocatePythonBundle()));
 end;
 
@@ -158,17 +222,117 @@ begin
   Result := TPath.Combine(GetBundleImageFolder(), GetPythonBundleName());
 end;
 
-class function TPyEnvironmentProjectDeployPlatform.GetDeployables(
-  const AProjectFileName, APythonEnvironmentDir,
-  APythonVersion: string): TArray<TPyEnvironmentDeployFile>;
+function TPyEnvironmentProjectDeployPlatform.MakeStartTaskMessage(
+  const ADeployTask: TDeployTask): string;
 begin
-  var LProjectDeploy := TPyEnvironmentProjectDeployPlatformClass(Self).Create(
-    AProjectFileName, APythonEnvironmentDir, APythonVersion);
-  try
-    Result := LProjectDeploy.Build();
-  finally
-    LProjectDeploy.Free();
+  case ADeployTask of
+    TDeployTask.Download: Result := 'Downloading ';
+    TDeployTask.Make: Result := 'Making ';
+    TDeployTask.Deploy: Result := 'Deploying ';
+    TDeployTask.Clean: Result := 'Cleaning ';
+    else
+      Result := String.Empty;
   end;
+  Result := Result + GetPythonBundleName() + ' for ' + GetPlatform().ToString();
+end;
+
+function TPyEnvironmentProjectDeployPlatform.ShouldDownload: boolean;
+var
+  LFileName: string;
+begin
+  LFileName := LocatePythonBundle();
+
+  Result := not (TFile.Exists(LFileName)
+    and TZipFile.IsValid(LFileName));
+end;
+
+function TPyEnvironmentProjectDeployPlatform.ShouldMake: boolean;
+var
+  LFileName: string;
+begin
+  LFileName := GetBundleMinimalFileName();
+
+  Result := not (TFile.Exists(LFileName)
+    and TZipFile.IsValid(LFileName));
+end;
+
+function TPyEnvironmentProjectDeployPlatform.Download(
+  const AInput: TDeployTaskInput): TDeployTaskOutput;
+var
+  LFileName: string;
+begin
+  LFileName := LocatePythonBundle();
+
+  Result := TDownloadPythonBundle.Download(GetPythonBundleName(), LFileName,
+    procedure(APercentage: integer) begin
+      OnProgress(TDeployTask.Download, APercentage);
+    end);
+
+   Result.Success := Result.Success and TFile.Exists(LFileName);
+end;
+
+function TPyEnvironmentProjectDeployPlatform.Clean(
+  const AInput: TDeployTaskInput): TDeployTaskOutput;
+begin
+  // We are basing in the exact same files deployed
+  Result := Deploy(AInput);
+end;
+
+function TPyEnvironmentProjectDeployPlatform.Execute(
+  out AFiles: TPyEnvironmentDeployFiles): boolean;
+var
+  LInput: TDeployTaskInput;
+  LOutput: TDeployTaskOutput;
+begin
+  LInput := Default(TDeployTaskInput);
+
+  if ShouldDownload() then begin
+    OnStartTask(TDeployTask.Download, MakeStartTaskMessage(TDeployTask.Download));
+    try
+      LOutput := Download(LInput);
+      if not LOutput.Success then
+        Exit(false);
+    finally
+      OnFinishTask(TDeployTask.Download, LOutput);
+    end;
+  end;
+
+  if ShouldMake() then begin
+    OnStartTask(TDeployTask.Make, MakeStartTaskMessage(TDeployTask.Make));
+    try
+      LOutput := Make(LInput);
+      if not LOutput.Success then
+        Exit(false);
+    finally
+      OnFinishTask(TDeployTask.Make, LOutput);
+    end;
+  end;
+
+  if not FModel.Cleaning then begin
+    OnStartTask(TDeployTask.Deploy, MakeStartTaskMessage(TDeployTask.Deploy));
+    try
+      LOutput := Deploy(LInput);
+      if not LOutput.Success then
+        Exit(false);
+
+      AFiles := LOutput.Args.GetFiles();
+    finally
+      OnFinishTask(TDeployTask.Deploy, LOutput);
+    end;
+  end else begin
+    OnStartTask(TDeployTask.Clean, MakeStartTaskMessage(TDeployTask.Clean));
+    try
+      LOutput := Clean(LInput);
+      if not LOutput.Success then
+        Exit(false);
+
+      AFiles := LOutput.Args.GetFiles();
+    finally
+      OnFinishTask(TDeployTask.Clean, LOutput);
+    end;
+  end;
+
+  Result := true;
 end;
 
 end.

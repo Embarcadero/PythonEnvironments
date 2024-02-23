@@ -41,10 +41,6 @@ uses
   PyEnvironment,
   //Embed Python
   PyEnvironment.Embeddable,
-  //Embed Python as a resource
-  PyEnvironment.Embeddable.Res.Python38,
-  PyEnvironment.Embeddable.Res.Python39,
-  PyEnvironment.Embeddable.Res.Python310,
   //Local Python installations
   PyEnvironment.Local,
   //Environment add-ons
@@ -58,10 +54,6 @@ begin
   RegisterComponents('Python - Environments', [
     //Embed Python
     TPyEmbeddedEnvironment,
-    //Embed Python as a resource
-    TPyEmbeddedResEnvironment38,
-    TPyEmbeddedResEnvironment39,
-    TPyEmbeddedResEnvironment310,
     //Local Python installations
     TPyLocalEnvironment,
     //Environment add-ons
