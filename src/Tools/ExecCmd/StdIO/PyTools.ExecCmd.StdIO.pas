@@ -40,6 +40,7 @@ type
   TStdReader = class(TStdBase, IStdReader)
   protected
     InternalBuffer: TBytes;
+    FLinesBuffer: string;
   protected
     function PullMessage(out AByteCount: integer): PBytes; virtual;
     function IsAlive: boolean; virtual; abstract;
@@ -52,6 +53,8 @@ type
 
     function ReadNext(const AEncoding: TEncoding): string; overload;
     function ReadNext(): string; overload;
+    function ReadNextLine(const AEncoding: TEncoding): string; overload;
+    function ReadNextLine(): string; overload;
     function ReadAll(const AEncoding: TEncoding): string; overload;
     function ReadAll(): string; overload;
     function ReadAll(out AValue: string; const ATimeout: cardinal; const AEncoding: TEncoding): boolean; overload;
@@ -205,6 +208,28 @@ end;
 function TStdReader.ReadNext: string;
 begin
   Result := ReadNext(GetEncoding());
+end;
+
+function TStdReader.ReadNextLine(const AEncoding: TEncoding): string;
+begin
+  FLinesBuffer := FLinesBuffer + ReadNext(AEncoding);
+
+  if FLinesBuffer.IsEmpty() then
+    Exit(String.Empty);
+
+  var LLineEnd := FLinesBuffer.IndexOf(sLineBreak);
+  if LLineEnd > -1 then begin
+    LLineEnd := LLineEnd + Length(sLineBreak);
+
+    Result := FLinesBuffer.Substring(0, LLineEnd);
+    FLinesBuffer := FLinesBuffer.Remove(0, LLineEnd);
+  end else
+    Result := String.Empty;
+end;
+
+function TStdReader.ReadNextLine: string;
+begin
+  Result := ReadNextLine(GetEncoding());
 end;
 
 function TStdReader.ReadAll(out AValue: string;
