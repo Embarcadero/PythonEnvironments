@@ -76,6 +76,8 @@ type
 
     function ReadNext(const AEncoding: TEncoding): string; overload;
     function ReadNext: string; overload;
+    function ReadNextLine(const AEncoding: TEncoding): string; overload;
+    function ReadNextLine(): string; overload;
     function ReadAll(const AEncoding: TEncoding): string; overload;
     function ReadAll(): string; overload;
     function ReadAll(out AValue: string; const ATimeout: cardinal; const AEncoding: TEncoding): boolean; overload;
