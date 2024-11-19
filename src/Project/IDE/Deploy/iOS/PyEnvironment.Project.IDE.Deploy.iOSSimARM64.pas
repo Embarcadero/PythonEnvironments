@@ -59,12 +59,13 @@ end;
 
 function TPyEnvironmentProjectDeployIOSSimARM64.GetPythonBundleName: string;
 begin
-  case IndexStr(GetPythonVersion(), ['3.8', '3.9', '3.10', '3.11', '3.12']) of
+  case IndexStr(GetPythonVersion(), ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13']) of
     0: Result := 'python3-ios-3.8.18-iphonesimulator.arm64.zip';
     1: Result := 'python3-ios-3.9.18-iphonesimulator.arm64.zip';
     2: Result := 'python3-ios-3.10.13-iphonesimulator.arm64.zip';
     3: Result := 'python3-ios-3.11.6-iphonesimulator.arm64.zip';
     4: Result := 'python3-ios-3.12.0-iphonesimulator.arm64.zip';
+    5: Result := 'python3-ios-3.13.0-iphonesimulator.arm64.zip';
     else
       Result := String.Empty;
   end;

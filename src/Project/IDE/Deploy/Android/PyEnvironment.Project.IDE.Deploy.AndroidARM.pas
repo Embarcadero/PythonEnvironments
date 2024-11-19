@@ -60,12 +60,13 @@ end;
 
 function TPyEnvironmentProjectDeployAndroidARM.GetPythonBundleName: string;
 begin
-  case IndexStr(GetPythonVersion(), ['3.8', '3.9', '3.10', '3.11', '3.12']) of
+  case IndexStr(GetPythonVersion(), ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13']) of
     0: Result := 'python3-android-3.8.16-arm.zip';
     1: Result := 'python3-android-3.9.16-arm.zip';
-    2: Result := 'python3-android-3.10.7-arm.zip';
-    3: Result := 'python3-android-3.11.2-arm.zip';
-    4: Result := 'python3-android-3.12.0-arm.zip';
+    2: Result := 'python3-android-3.10.11-arm.zip';
+    3: Result := 'python3-android-3.11.9-arm.zip';
+    4: Result := 'python3-android-3.12.7-arm.zip';
+    5: Result := 'python3-android-3.13.0-arm.zip';
     else
       Result := String.Empty;
   end;

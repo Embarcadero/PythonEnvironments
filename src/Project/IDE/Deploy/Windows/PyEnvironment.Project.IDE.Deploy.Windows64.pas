@@ -9,7 +9,7 @@
 (*                                                                        *)
 (* Project page:         https://github.com/Embarcadero/PythonEnviroments *)
 (**************************************************************************)
-(*  Functionality:  Make deployables for iOS Device ARM64                 *)
+(*  Functionality:  Make deployables for Windows x64                      *)
 (*                                                                        *)
 (*                                                                        *)
 (**************************************************************************)
@@ -59,12 +59,13 @@ end;
 
 function TPyEnvironmentProjectDeployWindows64.GetPythonBundleName: string;
 begin
-  case IndexStr(GetPythonVersion(), ['3.8', '3.9', '3.10', '3.11', '3.12']) of
+  case IndexStr(GetPythonVersion(), ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13']) of
     0: Result := 'python3-windows-3.8.10-amd64.zip';
     1: Result := 'python3-windows-3.9.13-amd64.zip';
-    2: Result := 'python3-windows-3.10.9-amd64.zip';
-    3: Result := 'python3-windows-3.11.2-amd64.zip';
-    4: Result := 'python3-windows-3.12.0-amd64.zip';
+    2: Result := 'python3-windows-3.10.11-amd64.zip';
+    3: Result := 'python3-windows-3.11.9-amd64.zip';
+    4: Result := 'python3-windows-3.12.7-amd64.zip';
+    5: Result := 'python3-windows-3.13.0-amd64.zip';
     else
       Result := String.Empty;
   end;

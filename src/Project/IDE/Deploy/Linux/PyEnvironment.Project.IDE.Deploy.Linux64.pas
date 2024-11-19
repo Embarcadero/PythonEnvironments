@@ -9,7 +9,7 @@
 (*                                                                        *)
 (* Project page:         https://github.com/Embarcadero/PythonEnviroments *)
 (**************************************************************************)
-(*  Functionality:  Make deployables for Android                          *)
+(*  Functionality:  Make deployables for Linux                            *)
 (*                                                                        *)
 (*                                                                        *)
 (**************************************************************************)
@@ -59,12 +59,13 @@ end;
 
 function TPyEnvironmentProjectDeployLinux64.GetPythonBundleName: string;
 begin
-  case IndexStr(GetPythonVersion(), ['3.8', '3.9', '3.10', '3.11', '3.12']) of
+  case IndexStr(GetPythonVersion(), ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13']) of
     0: Result := 'python3-linux-3.8.16-x86_64.zip';
     1: Result := 'python3-linux-3.9.16-x86_64.zip';
-    2: Result := 'python3-linux-3.10.9-x86_64.zip';
-    3: Result := 'python3-linux-3.11.2-x86_64.zip';
-    4: Result := 'python3-linux-3.12.0-x86_64.zip';
+    2: Result := 'python3-linux-3.10.11-x86_64.zip';
+    3: Result := 'python3-linux-3.11.9-x86_64.zip';
+    4: Result := 'python3-linux-3.12.7-x86_64.zip';
+    5: Result := 'python3-linux-3.13.0-x86_64.zip';
     else
       Result := String.Empty;
   end;
