@@ -82,7 +82,7 @@ type
       PROJECT_USE_PYTHON = 'PYTHON';
       PROJECT_NO_USE_PYTHON = 'NOPYTHON';
       PYTHON_ENVIRONMENT_DIR_VARIABLE = 'PYTHONENVIRONMENTDIR';
-      PYTHON_VERSIONS: array[0..4] of string = ('3.8', '3.9', '3.10', '3.11', '3.12');
+      PYTHON_VERSIONS: array[0..5] of string = ('3.8', '3.9', '3.10', '3.11', '3.12', '3.13');
       SUPPORTED_PLATFORMS = [
         TPyEnvironmentProjectPlatform.Win32, TPyEnvironmentProjectPlatform.Win64,
         TPyEnvironmentProjectPlatform.Android, TPyEnvironmentProjectPlatform.Android64,
@@ -318,7 +318,7 @@ class procedure TPyEnvironmentProjectDeploy.GetDeployFilesAsync(
 var
   LModel: TDeployFilesModel;
 begin
-  TPythonMessage.ShowMessageView(true);
+  TPythonMessage.ShowMessageView(false);
 
   // Must queue this call
   TTask.Run(

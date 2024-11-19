@@ -118,12 +118,13 @@ uses
 
 function TPyEnvironmentProjectDeployOSX.GetPythonBundleName: string;
 begin
-  case IndexStr(GetPythonVersion(), ['3.8', '3.9', '3.10', '3.11', '3.12']) of
+  case IndexStr(GetPythonVersion(), ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13']) of
     0: Result := 'python3-macos-3.8.18-universal2.zip';
     1: Result := 'python3-macos-3.9.18-universal2.zip';
     2: Result := 'python3-macos-3.10.13-universal2.zip';
     3: Result := 'python3-macos-3.11.6-universal2.zip';
     4: Result := 'python3-macos-3.12.0-universal2.zip';
+    5: Result := 'python3-macos-3.13.0-universal2.zip';
     else
       Result := String.Empty;
   end;

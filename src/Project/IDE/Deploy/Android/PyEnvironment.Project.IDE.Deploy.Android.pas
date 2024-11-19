@@ -140,7 +140,13 @@ begin
     LZip.Open(LocatePythonBundle(), TZipMode.zmRead);
 
     // Is the libpythonxx.so.1.0 the real one?
-    if LZip.IndexOf(Format('lib/libpython%s.so.1.0', [GetPythonVersion()])) >= 0 then begin
+    var LLibFileName := String.Empty;
+    if LZip.IndexOf(Format('lib/libpython%s.so.1.0', [GetPythonVersion()])) >= 0 then
+      LLibFileName := 'lib/libpython%s.so.1.0'
+    else if LZip.IndexOf(Format('lib/libpython%s.so', [GetPythonVersion()])) >= 0 then
+      LLibFileName := 'lib/libpython%s.so';
+
+    if not LLibFileName.IsEmpty() then begin
       var LAssetFileName := TPath.Combine(
         GetAssetsFolder(GetPythonVersion()),
         Format('libpython%s.so', [GetPythonVersion()]));
@@ -150,7 +156,7 @@ begin
 
       var LAssetStream := TFileStream.Create(LAssetFileName, fmCreate);
       try
-        LZip.Read(Format('lib/libpython%s.so.1.0', [GetPythonVersion()]), LStream, LLocalHeader);
+        LZip.Read(Format(LLibFileName, [GetPythonVersion()]), LStream, LLocalHeader);
         LAssetStream.CopyFrom(LStream, LStream.Size);
       finally
         LAssetStream.Free;
