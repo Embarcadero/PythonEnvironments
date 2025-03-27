@@ -11,4 +11,4 @@ pushd %PYENVPATH%
 set PYENVPATH=%cd%
 popd
 
-reg add "HKEY_CURRENT_USER\Software\Embarcadero\BDS\%PRODVER%\Environment Variables" /v PYTHONENVIRONMENTDIR /d %PYENVPATH% /f
+reg add "HKEY_CURRENT_USER\Software\Embarcadero\BDS\%PRODVER%\Environment Variables" /v PYTHONENVIRONMENTDIR /d "%PYENVPATH%" /f
